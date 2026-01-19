@@ -1,0 +1,233 @@
+:root {
+    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+html {
+    height: 100%;
+}
+
+body {
+    background: #f8f9fa;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* 主内容区域自动扩展 */
+.main-content {
+    flex: 1 0 auto;
+}
+
+/* 页脚固定在底部 */
+.footer {
+    flex-shrink: 0;
+    margin-top: auto;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+
+/* 顶部导航 */
+.navbar {
+    background: var(--primary-gradient);
+    box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+}
+
+.navbar-brand {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: white !important;
+}
+
+.nav-link {
+    color: rgba(255,255,255,0.9) !important;
+}
+
+.nav-link:hover {
+    color: white !important;
+}
+
+/* 菜谱头部 */
+.recipe-header {
+    background: white;
+    border-radius: 15px;
+    padding: 40px;
+    margin: 30px 0;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+}
+
+.recipe-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 15px;
+}
+
+.recipe-meta-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding: 20px 0;
+    border-top: 2px solid #e9ecef;
+    border-bottom: 2px solid #e9ecef;
+    margin: 20px 0;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.meta-item i {
+    font-size: 1.2rem;
+    color: #667eea;
+}
+
+.meta-label {
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+.meta-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.price-box {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.price-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+    margin-bottom: 5px;
+}
+
+.price-value {
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+/* 内容区域 */
+.recipe-content {
+    background: white;
+    border-radius: 15px;
+    padding: 40px;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+    margin-bottom: 30px;
+}
+
+.markdown-body {
+    max-width: 100%;
+    font-size: 1rem;
+    line-height: 1.8;
+}
+
+.markdown-body h1, .markdown-body h2 {
+    border-bottom: 2px solid #667eea;
+    padding-bottom: 10px;
+}
+
+/* 相关菜谱 */
+.related-recipes {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+}
+
+.related-recipe-card {
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    padding: 15px;
+    transition: all 0.3s;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    margin-bottom: 15px;
+}
+
+.related-recipe-card:hover {
+    border-color: #667eea;
+    transform: translateX(5px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.related-recipe-title {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 5px;
+}
+
+.related-recipe-price {
+    color: #28a745;
+    font-weight: 600;
+}
+
+/* 操作按钮 */
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.btn-back {
+    background: #6c757d;
+    color: white;
+    border: none;
+    padding: 10px 25px;
+    border-radius: 25px;
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+.btn-back:hover {
+    background: #5a6268;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.btn-print {
+    background: var(--primary-gradient);
+    color: white;
+    border: none;
+    padding: 10px 25px;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-print:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+    .recipe-title {
+        font-size: 1.8rem;
+    }
+    
+    .recipe-header, .recipe-content {
+        padding: 20px;
+    }
+    
+    .recipe-meta-bar {
+        flex-direction: column;
+        gap: 15px;
+    }
+}
+
+@media print {
+    .navbar, .action-buttons, .related-recipes {
+        display: none;
+    }
+}

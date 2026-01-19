@@ -1,0 +1,259 @@
+:root {
+    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    --info-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+html {
+    height: 100%;
+}
+
+body {
+    background: linear-gradient(to bottom, #f8f9fa 0%, #e9ecef 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* 主内容区域自动扩展 */
+.main-content {
+    flex: 1 0 auto;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+
+/* 导航栏 */
+.navbar {
+    background: var(--primary-gradient);
+    box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+}
+
+.navbar-brand {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: white !important;
+}
+
+.navbar-brand i {
+    margin-right: 10px;
+}
+
+/* Hero 区域 */
+.hero-section {
+    background: var(--primary-gradient);
+    color: white;
+    padding: 60px 0 40px;
+    margin-bottom: 40px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.hero-section h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 15px;
+}
+
+.hero-section p {
+    font-size: 1.1rem;
+    opacity: 0.95;
+}
+
+.stats-box {
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 20px;
+    text-align: center;
+    margin-top: 30px;
+}
+
+.stats-box .stat-item {
+    display: inline-block;
+    margin: 0 30px;
+}
+
+.stats-box .stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    display: block;
+}
+
+.stats-box .stat-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+/* 分类筛选 */
+.category-filter {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.category-badge {
+    display: inline-block;
+    padding: 8px 20px;
+    margin: 5px;
+    border-radius: 25px;
+    background: #f8f9fa;
+    color: #495057;
+    text-decoration: none;
+    transition: all 0.3s;
+    border: 2px solid transparent;
+}
+
+.category-badge:hover {
+    background: var(--primary-gradient);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.category-badge.active {
+    background: var(--primary-gradient);
+    color: white;
+    border-color: #764ba2;
+}
+
+.category-badge .badge {
+    margin-left: 8px;
+}
+
+/* 菜谱卡片 */
+.recipe-card {
+    border: none;
+    border-radius: 15px;
+    overflow: hidden;
+    transition: all 0.3s;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    background: white;
+    height: 100%;
+}
+
+.recipe-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.recipe-card-header {
+    background: var(--primary-gradient);
+    color: white;
+    padding: 20px;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.recipe-card-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.recipe-card-category {
+    display: inline-block;
+    background: rgba(255,255,255,0.2);
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+}
+
+.recipe-card-body {
+    padding: 20px;
+}
+
+.recipe-description {
+    color: #495057;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 15px;
+    min-height: 60px;
+}
+
+.recipe-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 15px;
+    border-top: 1px solid #e9ecef;
+}
+
+.recipe-price {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #28a745;
+}
+
+.recipe-price small {
+    font-size: 0.8rem;
+    color: #6c757d;
+    font-weight: 400;
+}
+
+.btn-view-recipe {
+    background: var(--primary-gradient);
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 20px;
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+.btn-view-recipe:hover {
+    color: white;
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+/* 空状态 */
+.empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    color: #6c757d;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    opacity: 0.3;
+}
+
+/* 页脚 */
+.footer {
+    background: #2c3e50;
+    color: white;
+    padding: 40px 0 20px;
+    margin-top: auto;
+    flex-shrink: 0;
+}
+
+.footer a {
+    color: #ecf0f1;
+    text-decoration: none;
+}
+
+.footer a:hover {
+    color: white;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+    .hero-section h1 {
+        font-size: 1.8rem;
+    }
+    
+    .stats-box .stat-item {
+        margin: 0 15px;
+    }
+    
+    .stats-box .stat-number {
+        font-size: 1.5rem;
+    }
+}

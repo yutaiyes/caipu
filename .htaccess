@@ -1,0 +1,26 @@
+# 商用菜谱库伪静态规则
+# Recipe System URL Rewrite Rules
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteBase /
+# 如果请求的是真实存在的文件或目录，直接访问
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+# 菜谱详情页: /recipe/数字ID.html -> recipe.php?id=数字ID
+RewriteRule ^recipe/([0-9]+)\.html$ recipe.php?id=$1 [L,QSA]
+# 分类页面: /category/数字ID.html -> index.php?cat=数字ID
+RewriteRule ^category/([0-9]+)\.html$ index.php?cat=$1 [L,QSA]
+# 自定义页面: /page/标识.html -> page.php?slug=标识
+RewriteRule ^page/([a-zA-Z0-9_-]+)\.html$ page.php?slug=$1 [L,QSA]
+# 首页: /index.html -> index.php
+RewriteRule ^index\.html$ index.php [L,QSA]
+</IfModule>
+# 安全设置
+<FilesMatch "\.(db|bak|sql|log)$">
+Order allow,deny
+Deny from all
+</FilesMatch>
+# 防止目录浏览
+Options -Indexes
+# 字符编码
+AddDefaultCharset UTF-8
