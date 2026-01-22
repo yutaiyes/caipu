@@ -4,7 +4,7 @@
 
 ## ✨ 核心特性
 
-- **📥 立即下载**：[Caipu_v1.0.0.zip](https://github.com/yutaiyes/caipu/releases)) (最新稳定版)
+- **📥 立即下载**：[Caipu_v1.0.0.zip](https://github.com/yutaiyes/caipu/releases) (最新稳定版)
 - **轻量架构**：原生 PHP + SQLite，无需复杂的数据库配置，部署极简。
 - **菜谱管理**：支持 Markdown 编辑、分类管理、成本/售价计算、公开/私有状态控制。
 - **伪静态支持**：独创 12 位混合大小写干扰编码 ID（如 `540000000001.html`），既保护真实 ID 又兼顾 SEO 友好。
