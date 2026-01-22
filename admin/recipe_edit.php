@@ -1,14 +1,14 @@
 <?php
-require 'layout_header.php';
-$id = (int)$_GET['id'];
-$recipe = $db->query("SELECT * FROM recipes WHERE id=$id")->fetch();
-$cats = $db->query("SELECT * FROM categories")->fetchAll();
-if (!$recipe) {
+require'layout_header.php';
+$id=(int)$_GET['id'];
+$recipe=$db->query("SELECT * FROM recipes WHERE id=$id")->fetch();
+$cats=$db->query("SELECT * FROM categories")->fetchAll();
+if(!$recipe){
 echo "<script>alert('菜谱不存在！');location.href='recipe_list.php';</script>";
 exit;
 }
-if ($_POST) {
-$stmt = $db->prepare("
+if($_POST){
+$stmt=$db->prepare("
 UPDATE recipes
 SET title=?, description=?, content=?, category_id=?, cost_price=?, sell_price=?, is_public=?
 WHERE id=?
@@ -17,9 +17,9 @@ $stmt->execute([
 $_POST['title'],
 $_POST['description'],
 $_POST['content'],
-$_POST['category_id'] ?: null,
-$_POST['cost_price'] ?: 0,
-$_POST['sell_price'] ?: 0,
+$_POST['category_id']?:null,
+$_POST['cost_price']?:0,
+$_POST['sell_price']?:0,
 $_POST['is_public'],
 $id
 ]);
@@ -46,7 +46,7 @@ exit;
 <div class="mb-3">
 <label class="form-label">菜名 <span class="text-danger">*</span></label>
 <input class="form-control" name="title"
-value="<?= htmlspecialchars($recipe['title']) ?>" required>
+value="<?=htmlspecialchars($recipe['title'])?>" required>
 </div>
 </div>
 <div class="col-12 col-md-4">
@@ -54,19 +54,19 @@ value="<?= htmlspecialchars($recipe['title']) ?>" required>
 <label class="form-label">分类</label>
 <select class="form-select" name="category_id">
 <option value="">未分类</option>
-<?php foreach ($cats as $c): ?>
-<option value="<?= $c['id'] ?>"
-<?= $c['id'] == $recipe['category_id'] ? 'selected' : '' ?>>
-<?= htmlspecialchars($c['name']) ?>
+<?php foreach($cats as $c):?>
+<option value="<?=$c['id']?>"
+<?=$c['id']==$recipe['category_id']?'selected':''?>>
+<?=htmlspecialchars($c['name'])?>
 </option>
-<?php endforeach; ?>
+<?php endforeach;?>
 </select>
 </div>
 </div>
 </div>
 <div class="mb-3">
 <label class="form-label">简介</label>
-<textarea class="form-control" name="description" rows="2"><?= htmlspecialchars($recipe['description']) ?></textarea>
+<textarea class="form-control" name="description" rows="2"><?=htmlspecialchars($recipe['description'])?></textarea>
 </div>
 <div class="mb-3">
 <div class="d-flex justify-content-between align-items-center mb-2">
@@ -75,29 +75,29 @@ value="<?= htmlspecialchars($recipe['title']) ?>" required>
 <i class="fas fa-info-circle"></i> 支持Markdown格式
 </small>
 </div>
-<textarea id="md" name="content"><?= htmlspecialchars($recipe['content']) ?></textarea>
+<textarea id="md" name="content"><?=htmlspecialchars($recipe['content'])?></textarea>
 </div>
 <div class="row">
 <div class="col-12 col-md-4">
 <div class="mb-3">
 <label class="form-label">成本价(元)</label>
 <input type="number" step="0.01" class="form-control"
-name="cost_price" value="<?= $recipe['cost_price'] ?>">
+name="cost_price" value="<?=$recipe['cost_price']?>">
 </div>
 </div>
 <div class="col-12 col-md-4">
 <div class="mb-3">
 <label class="form-label">售价(元)</label>
 <input type="number" step="0.01" class="form-control"
-name="sell_price" value="<?= $recipe['sell_price'] ?>">
+name="sell_price" value="<?=$recipe['sell_price']?>">
 </div>
 </div>
 <div class="col-12 col-md-4">
 <div class="mb-3">
 <label class="form-label">状态</label>
 <select class="form-select" name="is_public">
-<option value="1" <?= $recipe['is_public'] ? 'selected' : '' ?>>公开</option>
-<option value="0" <?= !$recipe['is_public'] ? 'selected' : '' ?>>私有</option>
+<option value="1" <?=$recipe['is_public']?'selected':''?>>公开</option>
+<option value="0" <?=!$recipe['is_public']?'selected':''?>>私有</option>
 </select>
 </div>
 </div>
@@ -106,6 +106,21 @@ name="sell_price" value="<?= $recipe['sell_price'] ?>">
 <button type="submit" class="btn btn-primary">
 <i class="fas fa-save"></i> 保存修改
 </button>
+<?php
+// 根据伪静态设置显示对应格式的预览URL
+$rewrite_enabled = getSiteSetting('rewrite_enabled', 0) == '1';
+$base12 = encode_id($id);
+if ($rewrite_enabled) {
+    // 开启伪静态：显示伪静态URI
+    $preview_url = FRONTEND_BASE_URL . $base12 . ".html";
+} else {
+    // 关闭伪静态：显示动态地址（base12位）
+    $preview_url = FRONTEND_BASE_URL . "recipe.php?base=" . $base12;
+}
+?>
+<a href="<?= $preview_url ?>" target="_blank" class="btn btn-success">
+<i class="fas fa-eye"></i> 预览页面
+</a>
 <a href="recipe_list.php" class="btn btn-secondary">
 <i class="fas fa-times"></i> 取消
 </a>
@@ -150,27 +165,47 @@ let isAdvancedMode = true;
 function initAdvancedEditor() {
 if (easyMDE) return;
 easyMDE = new EasyMDE({
-element: document.getElementById("md"),
-uploadImage: true,
-imageUploadEndpoint: "upload.php",
-placeholder: "请输入菜谱详细内容，支持Markdown格式...\n\n提示：\n- 使用 # 创建标题\n- 使用 ** 加粗文字\n- 使用 - 创建列表\n- 点击工具栏图标插入图片、链接等",
-spellChecker: false,
-autosave: {
-enabled: true,
-uniqueId: "recipe_edit_<?= $id ?>",
-delay: 1000,
-},
-toolbar: [
-"bold", "italic", "heading", "|",
-"quote", "unordered-list", "ordered-list", "|",
-"link", "image", "|",
-"preview", "side-by-side", "fullscreen", "|",
-"guide"
-],
-status: ["lines", "words", "cursor"],
-renderingConfig: {
-codeSyntaxHighlighting: true,
-}
+    element: document.getElementById("md"),
+    uploadImage: true,
+    imageUploadEndpoint: "upload.php",
+    imageUploadFunction: function(file, onSuccess, onError) {
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        fetch('upload.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                onSuccess(data.url);
+            } else {
+                onError(data.message || '上传失败');
+            }
+        })
+        .catch(error => {
+            onError('上传失败: ' + error.message);
+        });
+    },
+    placeholder: "请输入菜谱详细内容，支持Markdown格式...\n\n提示：\n- 使用 # 创建标题\n- 使用 ** 加粗文字\n- 使用 - 创建列表\n- 点击工具栏图标插入图片、链接等\n- 可以直接拖拽图片到编辑器上传",
+    spellChecker: false,
+    autosave: {
+        enabled: true,
+        uniqueId: "recipe_edit_<?=$id?>",
+        delay: 1000,
+    },
+    toolbar: [
+        "bold", "italic", "heading", "|",
+        "quote", "unordered-list", "ordered-list", "|",
+        "link", "upload-image", "|",
+        "preview", "side-by-side", "fullscreen", "|",
+        "guide"
+    ],
+    status: ["lines", "words", "cursor", "upload-image"],
+    renderingConfig: {
+        codeSyntaxHighlighting: true,
+    }
 });
 }
 // 切换到简单模式
@@ -216,5 +251,5 @@ document.getElementById('simpleMode').addEventListener('click', switchToSimpleMo
 document.getElementById('advancedMode').addEventListener('click', switchToAdvancedMode);
 });
 </script>
-<?php require 'layout_footer.php'; ?>
+<?php require'layout_footer.php';?>
 

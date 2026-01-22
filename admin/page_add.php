@@ -1,13 +1,13 @@
 <?php
-require 'layout_header.php';
-try {
+require'layout_header.php';
+try{
 $db->query("SELECT 1 FROM pages LIMIT 1");
-} catch (Exception $e) {
+}catch(Exception $e){
 echo "<script>alert('请先运行数据库升级脚本：upgrade_pages.php');location.href='page_list.php';</script>";
 exit;
 }
-if ($_POST) {
-$stmt = $db->prepare("
+if($_POST){
+$stmt=$db->prepare("
 INSERT INTO pages (title, slug, content, type, is_public, sort_order)
 VALUES (?, ?, ?, ?, ?, ?)
 ");
@@ -16,10 +16,22 @@ $_POST['title'],
 $_POST['slug'],
 $_POST['content'],
 $_POST['type'],
-$_POST['is_public'] ?? 1,
-$_POST['sort_order'] ?? 0
+$_POST['is_public']??1,
+$_POST['sort_order']??0
 ]);
-echo "<script>alert('添加成功！');location.href='page_list.php';</script>";
+$new_id = $db->lastInsertId();
+$rewrite_enabled = Config::get('rewrite_enabled', '0') === '1';
+if ($rewrite_enabled) {
+    $preview_url = BASE_URI . encode_id($new_id, 'page') . ".html";
+} else {
+    $preview_url = BASE_URI . "page.php?slug=" . $_POST['slug'];
+}
+echo "<script>
+if(confirm('添加成功！是否预览新添加的页面？')) {
+    window.open('" . $preview_url . "', '_blank');
+}
+location.href='page_list.php';
+</script>";
 exit;
 }
 ?>
@@ -40,7 +52,15 @@ exit;
 <div class="mb-3">
 <label class="form-label">URL标识 <span class="text-danger">*</span></label>
 <input class="form-control" name="slug" placeholder="例如：about（仅英文字母、数字、横线）" required>
-<small class="text-muted">访问地址：page.php?slug=标识</small>
+<div class="mt-2">
+<small class="text-muted">访问地址：</small>
+<div class="d-flex gap-2 flex-wrap">
+<code class="small">page.php?slug=标识</code>
+<span class="text-muted">或</span>
+<code class="small">12位编码.html</code>
+</div>
+<small class="text-info"><i class="fas fa-info-circle"></i> 系统会自动生成12位编码用于伪静态URL</small>
+</div>
 </div>
 </div>
 </div>
@@ -110,5 +130,5 @@ toolbar: [
 status: ["lines", "words", "cursor"]
 });
 </script>
-<?php require 'layout_footer.php'; ?>
+<?php require'layout_footer.php';?>
 

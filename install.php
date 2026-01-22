@@ -10,13 +10,33 @@ if (file_exists($dbFile)) {
     exit;
 }
 
+// 自动安装模式
+$auto_install = !isset($_GET['manual']);
+
 // 处理安装请求
-if (isset($_POST['install'])) {
+if ($auto_install || isset($_POST['install'])) {
+    $install_steps = [];
+    $current_step = 0;
+    
     try {
+        // 步骤1：创建数据目录
+        $current_step = 1;
+        $install_steps[] = ['step' => 1, 'name' => '创建数据目录', 'status' => 'processing'];
         @mkdir(__DIR__ . '/data', 0777, true);
+        @mkdir(__DIR__ . '/uploads', 0777, true);
+        @mkdir(__DIR__ . '/backups', 0777, true);
+        $install_steps[0]['status'] = 'success';
         
+        // 步骤2：创建数据库
+        $current_step = 2;
+        $install_steps[] = ['step' => 2, 'name' => '创建数据库', 'status' => 'processing'];
         $db = new PDO('sqlite:' . $dbFile);
         $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $install_steps[1]['status'] = 'success';
+        
+        // 步骤3：创建数据表
+        $current_step = 3;
+        $install_steps[] = ['step' => 3, 'name' => '创建数据表', 'status' => 'processing'];
         
         /* 菜谱表 */
         $db->exec("
@@ -58,6 +78,7 @@ if (isset($_POST['install'])) {
             title TEXT NOT NULL,
             slug TEXT NOT NULL UNIQUE,
             content TEXT NOT NULL,
+            type TEXT DEFAULT 'custom',
             is_public INTEGER DEFAULT 1,
             sort_order INTEGER DEFAULT 0,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -77,6 +98,12 @@ if (isset($_POST['install'])) {
         );
         ");
         
+        $install_steps[2]['status'] = 'success';
+        
+        // 步骤4：插入默认数据
+        $current_step = 4;
+        $install_steps[] = ['step' => 4, 'name' => '插入默认数据', 'status' => 'processing'];
+        
         /* 默认管理员：admin / 123456 */
         $pwd = password_hash('123456', PASSWORD_DEFAULT);
         $db->prepare("INSERT INTO admin (username,password) VALUES (?,?)")
@@ -93,7 +120,8 @@ if (isset($_POST['install'])) {
             ['geo_region', 'CN', '地理区域代码'],
             ['geo_placename', '中国', '地理位置名称'],
             ['geo_position', '', '地理坐标 (纬度;经度)'],
-        ];
+            ['rewrite_enabled', '0', '是否开启伪静态 (1:开启, 0:关闭)'],
+        ];];
         
         $stmt = $db->prepare("INSERT INTO settings (key, value, description) VALUES (?, ?, ?)");
         foreach ($default_settings as $setting) {
@@ -109,20 +137,31 @@ if (isset($_POST['install'])) {
         
         /* 插入示例页面 */
         $pages = [
-            ['关于我们', 'about', '# 关于我们\n\n欢迎来到商用菜谱库！\n\n我们致力于为餐饮行业提供专业的菜谱管理解决方案。'],
-            ['联系我们', 'contact', '# 联系我们\n\n如有任何问题，欢迎联系我们。\n\n- 邮箱：contact@example.com\n- 电话：123-456-7890'],
-            ['隐私政策', 'privacy', '# 隐私政策\n\n我们重视您的隐私保护。'],
+            ['关于我们', 'about', '# 关于我们\n\n欢迎来到商用菜谱库！\n\n我们致力于为餐饮行业提供专业的菜谱管理解决方案。', 'about', 1],
+            ['联系我们', 'contact', '# 联系我们\n\n如有任何问题，欢迎联系我们。\n\n- 邮箱：contact@example.com\n- 电话：123-456-7890', 'contact', 2],
+            ['隐私政策', 'privacy', '# 隐私政策\n\n我们重视您的隐私保护。', 'privacy', 3],
+            ['合作伙伴', 'partnership', '# 合作伙伴\n\n欢迎与我们合作的优秀企业！\n\n## 合作企业\n\n### 餐饮服务\n- **优质食材供应商** - 提供新鲜食材\n- **厨房设备商** - 专业厨房设备\n\n### 技术支持\n- **系统开发公司** - 技术支持\n- **网络服务商** - 网络保障\n\n## 合作咨询\n\n如有合作意向，欢迎联系我们！', 'partnership', 4],
         ];
         
-        $stmt = $db->prepare("INSERT INTO pages (title, slug, content, sort_order) VALUES (?, ?, ?, ?)");
-        foreach ($pages as $index => $page) {
-            $stmt->execute([$page[0], $page[1], $page[2], $index + 1]);
+        $stmt = $db->prepare("INSERT INTO pages (title, slug, content, type, is_public, sort_order) VALUES (?, ?, ?, ?, ?, ?)");
+        foreach ($pages as $page) {
+            $stmt->execute($page);
         }
+        
+        $install_steps[3]['status'] = 'success';
+        
+        // 步骤5：完成安装
+        $current_step = 5;
+        $install_steps[] = ['step' => 5, 'name' => '完成安装', 'status' => 'success'];
         
         $install_success = true;
         
     } catch (Exception $e) {
         $install_error = $e->getMessage();
+        if (isset($install_steps[$current_step - 1])) {
+            $install_steps[$current_step - 1]['status'] = 'error';
+            $install_steps[$current_step - 1]['error'] = $e->getMessage();
+        }
     }
 }
 ?>
@@ -239,6 +278,91 @@ if (isset($_POST['install'])) {
             justify-content: center;
             margin-top: 40px;
         }
+        .install-progress {
+            margin: 30px 0;
+        }
+        .progress-step {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+        .progress-step.success {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+        }
+        .progress-step.processing {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+        }
+        .progress-step.error {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+        }
+        .progress-step-icon {
+            font-size: 24px;
+            margin-right: 15px;
+            width: 30px;
+            text-align: center;
+        }
+        .progress-step.success .progress-step-icon {
+            color: #28a745;
+        }
+        .progress-step.processing .progress-step-icon {
+            color: #ffc107;
+            animation: spin 1s linear infinite;
+        }
+        .progress-step.error .progress-step-icon {
+            color: #dc3545;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .progress-step-name {
+            flex: 1;
+            font-weight: 500;
+        }
+        .url-box {
+            background: #f8f9fa;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .url-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin: 10px 0;
+            background: white;
+            border-radius: 5px;
+        }
+        .url-item i {
+            font-size: 24px;
+            margin-right: 15px;
+            color: #667eea;
+        }
+        .url-item-content {
+            flex: 1;
+        }
+        .url-item-label {
+            font-size: 12px;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+        .url-item-link {
+            font-size: 16px;
+            font-weight: 600;
+            color: #667eea;
+            text-decoration: none;
+        }
+        .url-item-link:hover {
+            text-decoration: underline;
+        }
         @media (max-width: 768px) {
             .action-buttons {
                 flex-direction: column;
@@ -266,14 +390,58 @@ if (isset($_POST['install'])) {
                     
                     <h2 class="text-center mb-4">🎉 安装成功！</h2>
                     
-                    <div class="alert alert-success">
-                        <h5><i class="fas fa-info-circle"></i> 安装信息</h5>
-                        <ul class="mb-0">
-                            <li>✅ 数据库创建成功</li>
-                            <li>✅ 数据表初始化完成</li>
-                            <li>✅ 默认数据插入成功</li>
-                            <li>✅ 系统配置完成</li>
-                        </ul>
+                    <!-- 安装进度 -->
+                    <?php if (!empty($install_steps)): ?>
+                    <div class="install-progress">
+                        <h5 class="mb-3"><i class="fas fa-tasks"></i> 安装进度</h5>
+                        <?php foreach ($install_steps as $step): ?>
+                        <div class="progress-step <?= $step['status'] ?>">
+                            <div class="progress-step-icon">
+                                <?php if ($step['status'] == 'success'): ?>
+                                <i class="fas fa-check-circle"></i>
+                                <?php elseif ($step['status'] == 'processing'): ?>
+                                <i class="fas fa-spinner"></i>
+                                <?php else: ?>
+                                <i class="fas fa-times-circle"></i>
+                                <?php endif; ?>
+                            </div>
+                            <div class="progress-step-name">
+                                步骤 <?= $step['step'] ?>: <?= $step['name'] ?>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php endif; ?>
+                    
+                    <!-- 访问链接 -->
+                    <div class="url-box">
+                        <h5 class="mb-3"><i class="fas fa-link"></i> 访问地址</h5>
+                        <?php
+                        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
+                        $host = $_SERVER['HTTP_HOST'];
+                        $base_url = $protocol . $host . dirname($_SERVER['PHP_SELF']);
+                        $base_url = rtrim($base_url, '/');
+                        $frontend_url = $base_url . '/index.php';
+                        $backend_url = $base_url . '/admin/';
+                        ?>
+                        <div class="url-item">
+                            <i class="fas fa-home"></i>
+                            <div class="url-item-content">
+                                <div class="url-item-label">前台首页</div>
+                                <a href="<?= $frontend_url ?>" class="url-item-link" target="_blank">
+                                    <?= $frontend_url ?>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="url-item">
+                            <i class="fas fa-user-shield"></i>
+                            <div class="url-item-content">
+                                <div class="url-item-label">管理后台</div>
+                                <a href="<?= $backend_url ?>" class="url-item-link" target="_blank">
+                                    <?= $backend_url ?>
+                                </a>
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="card mb-4">
@@ -293,23 +461,6 @@ if (isset($_POST['install'])) {
                                 <i class="fas fa-exclamation-triangle"></i> 
                                 <strong>安全提示：</strong>请登录后台后立即修改默认密码！
                             </div>
-                        </div>
-                    </div>
-                    
-                    <div class="card mb-4">
-                        <div class="card-header bg-info text-white">
-                            <i class="fas fa-star"></i> 系统功能
-                        </div>
-                        <div class="card-body">
-                            <ul class="feature-list">
-                                <li><i class="fas fa-utensils"></i> 菜谱管理 - 支持Markdown编辑，图片上传</li>
-                                <li><i class="fas fa-tags"></i> 分类管理 - 灵活的分类体系</li>
-                                <li><i class="fas fa-file-alt"></i> 页面管理 - 自定义页面内容</li>
-                                <li><i class="fas fa-globe"></i> 网站设置 - SEO优化，GEO信息</li>
-                                <li><i class="fas fa-compress"></i> 代码压缩 - 安全的代码优化</li>
-                                <li><i class="fas fa-database"></i> 数据库优化 - VACUUM优化</li>
-                                <li><i class="fas fa-book"></i> 文档中心 - 完整的使用文档</li>
-                            </ul>
                         </div>
                     </div>
                     

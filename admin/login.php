@@ -1,32 +1,37 @@
 <?php
 session_start();
-define('ADMIN_ACCESS', true);
-require_once 'security.php';
-$db = new PDO('sqlite:../data/data.db');
-$error = '';
-if ($_POST) {
-$username = $_POST['username'] ?? '';
-$password = $_POST['password'] ?? '';
-if (!check_login_attempts($username)) {
-$error = '登录失败次数过多，请15分钟后再试';
-} else {
-$stmt = $db->prepare("SELECT * FROM admin WHERE username=?");
+define('ADMIN_ACCESS',true);
+require_once'security.php';
+$db=new PDO('sqlite:../data/data.db');
+$error='';
+$message='';
+if(isset($_SESSION['profile_message'])){
+$message=$_SESSION['profile_message'];
+unset($_SESSION['profile_message']);
+}
+if($_POST){
+$username=$_POST['username']??'';
+$password=$_POST['password']??'';
+if(!check_login_attempts($username)){
+$error='登录失败次数过多，请15分钟后再试';
+}else{
+$stmt=$db->prepare("SELECT * FROM admin WHERE username=?");
 $stmt->execute([$username]);
-$user = $stmt->fetch(PDO::FETCH_ASSOC);
-if ($user && password_verify($password, $user['password'])) {
+$user=$stmt->fetch(PDO::FETCH_ASSOC);
+if($user&&password_verify($password,$user['password'])){
 clear_login_attempts($username);
 session_regenerate_id(true);
-$_SESSION['admin'] = $user['username'];
-$_SESSION['initiated'] = true;
-$_SESSION['last_activity'] = time();
+$_SESSION['admin']=$user['username'];
+$_SESSION['initiated']=true;
+$_SESSION['last_activity']=time();
 header('Location: index.php');
 exit;
-} else {
+}else{
 record_login_failure($username);
-$remaining = 5 - ($_SESSION['login_attempts'][$username] ?? 0);
-$error = '账号或密码错误';
-if ($remaining > 0 && $remaining < 5) {
-$error .= "（还有 {$remaining} 次尝试机会）";
+$remaining=5-($_SESSION['login_attempts'][$username]??0);
+$error='账号或密码错误';
+if($remaining>0&&$remaining<5){
+$error.="（还有 {$remaining} 次尝试机会）";
 }
 }
 }
@@ -50,11 +55,16 @@ $error .= "（还有 {$remaining} 次尝试机会）";
 <small>后台管理登录</small>
 </div>
 <div class="login-body">
-<?php if (!empty($error)): ?>
-<div class="alert alert-danger">
-<i class="fas fa-exclamation-circle"></i> <?= $error ?>
+<?php if(!empty($message)):?>
+<div class="alert alert-success">
+<i class="fas fa-check-circle"></i> <?=htmlspecialchars($message)?>
 </div>
-<?php endif; ?>
+<?php endif;?>
+<?php if(!empty($error)):?>
+<div class="alert alert-danger">
+<i class="fas fa-exclamation-circle"></i> <?=$error?>
+</div>
+<?php endif;?>
 <form method="post">
 <div class="mb-3">
 <label class="form-label">

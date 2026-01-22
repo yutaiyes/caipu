@@ -1,43 +1,86 @@
 <?php
 session_start();
-date_default_timezone_set('Asia/Shanghai');
-$db_path = '../data/data.db';
-if (isset($_POST['action']) && $_POST['action'] === 'save') {
-$success = true;
-$message = '';
-try {
-$db = new PDO('sqlite:' . $db_path);
-$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-$settings = [
-'site_title' => $_POST['site_title'] ?? '',
-'site_subtitle' => $_POST['site_subtitle'] ?? '',
-'site_slogan' => $_POST['site_slogan'] ?? '',
-'site_description' => $_POST['site_description'] ?? '',
-'site_keywords' => $_POST['site_keywords'] ?? '',
-'site_author' => $_POST['site_author'] ?? '',
-'geo_region' => $_POST['geo_region'] ?? '',
-'geo_placename' => $_POST['geo_placename'] ?? '',
-'geo_position' => $_POST['geo_position'] ?? '',
-'enable_readme_browse' => isset($_POST['enable_readme_browse']) ? '1' : '0',
+$db_path='../data/data.db';
+if(isset($_POST['action'])&&$_POST['action']==='save'){
+$success=true;
+$message='';
+try{
+$db=new PDO('sqlite:'.$db_path);
+$db->setAttribute(PDO::ATTR_ERRMODE,PDO::ERRMODE_EXCEPTION);
+$settings=[
+'site_title'=>$_POST['site_title']??'',
+'site_subtitle'=>$_POST['site_subtitle']??'',
+'site_slogan'=>$_POST['site_slogan']??'',
+'site_description'=>$_POST['site_description']??'',
+'site_keywords'=>$_POST['site_keywords']??'',
+'site_author'=>$_POST['site_author']??'',
+'geo_region'=>$_POST['geo_region']??'',
+'geo_placename'=>$_POST['geo_placename']??'',
+'geo_position'=>$_POST['geo_position']??'',
+'enable_readme_browse'=>isset($_POST['enable_readme_browse'])?'1':'0',
+'environment_mode'=>$_POST['environment_mode']??'production',
+'compress_css'=>isset($_POST['compress_css'])?'1':'0',
 ];
-$stmt = $db->prepare("UPDATE settings SET value = ?, updated_at = CURRENT_TIMESTAMP WHERE key = ?");
-foreach ($settings as $key => $value) {
-$stmt->execute([$value, $key]);
+$stmt=$db->prepare("UPDATE settings SET value = ?, updated_at = CURRENT_TIMESTAMP WHERE key = ?");
+foreach($settings as $key=>$value){
+$stmt->execute([$value,$key]);
 }
-$message = '✓ 网站设置保存成功！';
-} catch (Exception $e) {
-$success = false;
-$message = '保存失败：' . $e->getMessage();
+// 检查并插入不存在的设置项
+foreach($settings as $key=>$value){
+$check=$db->prepare("SELECT COUNT(*) FROM settings WHERE key = ?");
+$check->execute([$key]);
+if($check->fetchColumn()==0){
+$desc='';
+if($key=='environment_mode') $desc='环境模式：production或development';
+if($key=='enable_readme_browse') $desc='是否启用readme目录浏览';
+if($key=='compress_css') $desc='是否压缩CSS文件为单行格式';
+$insert=$db->prepare("INSERT INTO settings (key, value, description) VALUES (?, ?, ?)");
+$insert->execute([$key,$value,$desc]);
 }
-$show_message = true;
-$message_type = $success ? 'success' : 'danger';
-$message_text = $message;
 }
-require 'layout_header.php';
-$db = new PDO('sqlite:' . $db_path);
-$settings = [];
-$table_exists = $db->query("SELECT name FROM sqlite_master WHERE type='table' AND name='settings'")->fetch();
-if (!$table_exists) {
+// 如果启用了CSS压缩，执行压缩
+if(isset($settings['compress_css']) && $settings['compress_css'] === '1'){
+$css_files = [
+'../assets/css/frontend.css',
+'../assets/css/admin.css',
+'../assets/css/login.css',
+'../assets/css/recipe-detail.css'
+];
+foreach($css_files as $css_file){
+if(file_exists($css_file)){
+$content = file_get_contents($css_file);
+// 压缩CSS：移除注释、换行、多余空格
+$compressed = preg_replace(
+[
+'/\/\*[\s\S]*?\*\//', // 移除多行注释
+'/\/\*.*?\*\//',     // 移除单行注释
+'/\s+/',             // 多个空格替换为一个空格
+'/\s*([{}:;,])\s*/', // 移除符号周围空格
+'/;}/'                // 移除最后一个分号前的多余字符
+],
+['', '', ' ', '$1', '}'],
+$content
+);
+file_put_contents($css_file, $compressed);
+}
+}
+$message='✓ 网站设置保存成功！CSS文件已压缩。';
+}else{
+$message='✓ 网站设置保存成功！';
+}
+}catch(Exception $e){
+$success=false;
+$message='保存失败：'.$e->getMessage();
+}
+$show_message=true;
+$message_type=$success?'success':'danger';
+$message_text=$message;
+}
+require'layout_header.php';
+$db=new PDO('sqlite:'.$db_path);
+$settings=[];
+$table_exists=$db->query("SELECT name FROM sqlite_master WHERE type='table' AND name='settings'")->fetch();
+if(!$table_exists){
 ?>
 <div class="page-header">
 <h3 class="mb-0"><i class="fas fa-cog"></i> 网站设置</h3>
@@ -51,12 +94,12 @@ if (!$table_exists) {
 <p class="mb-0"><small>或在命令行运行：<code>php upgrade_settings.php</code></small></p>
 </div>
 <?php
-require 'layout_footer.php';
+require'layout_footer.php';
 exit;
 }
-$result = $db->query("SELECT key, value FROM settings");
-while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
-$settings[$row['key']] = $row['value'];
+$result=$db->query("SELECT key, value FROM settings");
+while($row=$result->fetch(PDO::FETCH_ASSOC)){
+$settings[$row['key']]=$row['value'];
 }
 ?>
 <div class="page-header">
@@ -85,50 +128,99 @@ $settings[$row['key']] = $row['value'];
 <div class="mb-3">
 <label class="form-label"><i class="fas fa-heading"></i> 网站标题</label>
 <input type="text" name="site_title" class="form-control"
-value="<?= htmlspecialchars($settings['site_title'] ?? '') ?>"
+value="<?=htmlspecialchars($settings['site_title']??'')?>"
 placeholder="例如：商用菜谱库" required>
 <small class="form-text text-muted">显示在浏览器标签页和搜索结果中</small>
 </div>
 <div class="mb-3">
 <label class="form-label"><i class="fas fa-heading"></i> 网站副标题</label>
 <input type="text" name="site_subtitle" class="form-control"
-value="<?= htmlspecialchars($settings['site_subtitle'] ?? '') ?>"
+value="<?=htmlspecialchars($settings['site_subtitle']??'')?>"
 placeholder="例如：专业的商用菜谱管理系统">
 <small class="form-text text-muted">显示在网站标题下方，简短说明网站定位</small>
 </div>
 <div class="mb-3">
 <label class="form-label"><i class="fas fa-quote-left"></i> 网站口号 (Slogan)</label>
 <input type="text" name="site_slogan" class="form-control"
-value="<?= htmlspecialchars($settings['site_slogan'] ?? '') ?>"
+value="<?=htmlspecialchars($settings['site_slogan']??'')?>"
 placeholder="例如：让美食触手可及">
 <small class="form-text text-muted">品牌宣传语，吸引用户，可用于首页展示</small>
 </div>
 <div class="mb-3">
 <label class="form-label"><i class="fas fa-align-left"></i> 网站描述 (Meta Description)</label>
 <textarea name="site_description" class="form-control" rows="3"
-placeholder="例如：专业的商用菜谱管理系统，提供海量菜谱资源" required><?= htmlspecialchars($settings['site_description'] ?? '') ?></textarea>
+placeholder="例如：专业的商用菜谱管理系统，提供海量菜谱资源" required><?=htmlspecialchars($settings['site_description']??'')?></textarea>
 <small class="form-text text-muted">建议150-160字符，显示在搜索结果摘要中，影响点击率</small>
 </div>
 <div class="mb-3">
 <label class="form-label"><i class="fas fa-tags"></i> 网站关键词 (Meta Keywords)</label>
 <input type="text" name="site_keywords" class="form-control"
-value="<?= htmlspecialchars($settings['site_keywords'] ?? '') ?>"
+value="<?=htmlspecialchars($settings['site_keywords']??'')?>"
 placeholder="例如：菜谱,美食,烹饪,食谱,商用菜谱">
 <small class="form-text text-muted">用逗号分隔，建议5-10个关键词，帮助搜索引擎理解网站内容</small>
 </div>
 <div class="mb-3">
 <label class="form-label"><i class="fas fa-user"></i> 网站作者 (Meta Author)</label>
 <input type="text" name="site_author" class="form-control"
-value="<?= htmlspecialchars($settings['site_author'] ?? '') ?>"
+value="<?=htmlspecialchars($settings['site_author']??'')?>"
 placeholder="例如：商用菜谱库">
 <small class="form-text text-muted">网站所有者或管理者名称</small>
 </div>
+<hr class="my-4">
+<h5 class="mb-3"><i class="fas fa-cogs"></i> 系统环境设置</h5>
+<div class="mb-3">
+<label class="form-label"><i class="fas fa-server"></i> 环境模式</label>
+<select name="environment_mode" class="form-select" id="environment_mode">
+<option value="production" <?=($settings['environment_mode']??'production')=='production'?'selected':''?>>
+生产环境 (Production)
+</option>
+<option value="development" <?=($settings['environment_mode']??'production')=='development'?'selected':''?>>
+开发环境 (Development)
+</option>
+</select>
+<small class="form-text text-muted">
+选择当前运行环境。生产环境会隐藏错误信息，开发环境会显示详细调试信息。
+</small>
+</div>
+<div class="alert alert-warning" id="dev-mode-warning" style="display: none;">
+<h6><i class="fas fa-exclamation-triangle"></i> 开发环境警告</h6>
+<ul class="mb-0">
+<li><strong>错误显示</strong>：将显示详细的PHP错误信息</li>
+<li><strong>调试信息</strong>：将显示SQL查询和系统调试信息</li>
+<li><strong>安全风险</strong>：可能暴露敏感信息，不建议在生产环境使用</li>
+<li><strong>性能影响</strong>：调试模式可能影响系统性能</li>
+</ul>
+</div>
+<div class="alert alert-success" id="prod-mode-info" style="display: none;">
+<h6><i class="fas fa-check-circle"></i> 生产环境特性</h6>
+<ul class="mb-0">
+<li><strong>错误隐藏</strong>：不显示PHP错误信息，保护系统安全</li>
+<li><strong>性能优化</strong>：关闭调试功能，提升系统性能</li>
+<li><strong>日志记录</strong>：错误将记录到日志文件而不是显示</li>
+<li><strong>推荐使用</strong>：正式上线后应使用生产环境模式</li>
+</ul>
+</div>
+<script>
+document.getElementById('environment_mode').addEventListener('change', function() {
+    const devWarning = document.getElementById('dev-mode-warning');
+    const prodInfo = document.getElementById('prod-mode-info');
+    if (this.value === 'development') {
+        devWarning.style.display = 'block';
+        prodInfo.style.display = 'none';
+    } else {
+        devWarning.style.display = 'none';
+        prodInfo.style.display = 'block';
+    }
+});
+// 页面加载时触发一次
+document.getElementById('environment_mode').dispatchEvent(new Event('change'));
+</script>
 <hr class="my-4">
 <h5 class="mb-3"><i class="fas fa-book"></i> 文档中心设置</h5>
 <div class="mb-3">
 <div class="form-check form-switch">
 <input class="form-check-input" type="checkbox" name="enable_readme_browse"
-id="enable_readme_browse" <?= ($settings['enable_readme_browse'] ?? '0') == '1' ? 'checked' : '' ?>>
+id="enable_readme_browse" <?=($settings['enable_readme_browse']??'0')=='1'?'checked':''?>>
 <label class="form-check-label" for="enable_readme_browse">
 <i class="fas fa-folder-open"></i> 启用 readme 目录浏览
 </label>
@@ -138,19 +230,38 @@ id="enable_readme_browse" <?= ($settings['enable_readme_browse'] ?? '0') == '1' 
 </small>
 </div>
 <hr class="my-4">
+<h5 class="mb-3"><i class="fas fa-compress-alt"></i> 性能优化设置</h5>
+<div class="mb-3">
+<div class="form-check form-switch">
+<input class="form-check-input" type="checkbox" name="compress_css"
+id="compress_css" <?=($settings['compress_css']??'0')=='1'?'checked':''?>>
+<label class="form-check-label" for="compress_css">
+<i class="fas fa-compress"></i> 压缩CSS文件（单行格式）
+</label>
+</div>
+<small class="form-text text-muted">
+启用后，所有CSS文件将被压缩为单行格式，减小文件体积，提升加载速度。建议在生产环境启用。
+</small>
+<div class="mt-2">
+<a href="compress_css.php" class="btn btn-outline-secondary btn-sm">
+<i class="fas fa-compress"></i> 手动压缩CSS
+</a>
+</div>
+</div>
+<hr class="my-4">
 <h5 class="mb-3"><i class="fas fa-map-marker-alt"></i> 地理信息 (GEO SEO)</h5>
 <div class="row">
 <div class="col-md-6 mb-3">
 <label class="form-label">地理区域代码 (geo.region)</label>
 <input type="text" name="geo_region" class="form-control"
-value="<?= htmlspecialchars($settings['geo_region'] ?? '') ?>"
+value="<?=htmlspecialchars($settings['geo_region']??'')?>"
 placeholder="例如：CN (中国)">
 <small class="form-text text-muted">ISO 3166-1 国家代码，如：CN, US, JP</small>
 </div>
 <div class="col-md-6 mb-3">
 <label class="form-label">地理位置名称 (geo.placename)</label>
 <input type="text" name="geo_placename" class="form-control"
-value="<?= htmlspecialchars($settings['geo_placename'] ?? '') ?>"
+value="<?=htmlspecialchars($settings['geo_placename']??'')?>"
 placeholder="例如：中国,北京">
 <small class="form-text text-muted">城市或地区名称</small>
 </div>
@@ -158,7 +269,7 @@ placeholder="例如：中国,北京">
 <div class="mb-3">
 <label class="form-label">地理坐标 (geo.position)</label>
 <input type="text" name="geo_position" class="form-control"
-value="<?= htmlspecialchars($settings['geo_position'] ?? '') ?>"
+value="<?=htmlspecialchars($settings['geo_position']??'')?>"
 placeholder="例如：39.9042;116.4074 (纬度;经度)">
 <small class="form-text text-muted">格式：纬度;经度，可选填。例如北京：39.9042;116.4074</small>
 </div>
@@ -175,13 +286,13 @@ placeholder="例如：39.9042;116.4074 (纬度;经度)">
 <i class="fas fa-save"></i> 保存设置
 </button>
 <!-- 消息显示区域 -->
-<?php if (isset($show_message) && $show_message): ?>
-<div class="alert alert-<?= $message_type ?> alert-dismissible fade show mt-3">
-<i class="fas fa-<?= $message_type == 'success' ? 'check-circle' : 'exclamation-circle' ?>"></i>
-<?= $message_text ?>
+<?php if(isset($show_message)&&$show_message):?>
+<div class="alert alert-<?=$message_type?> alert-dismissible fade show mt-3">
+<i class="fas fa-<?=$message_type=='success'?'check-circle':'exclamation-circle'?>"></i>
+<?=$message_text?>
 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
 </div>
-<?php endif; ?>
+<?php endif;?>
 </form>
 </div>
 </div>
@@ -238,5 +349,5 @@ placeholder="例如：39.9042;116.4074 (纬度;经度)">
 </div>
 </div>
 </div>
-<?php require 'layout_footer.php'; ?>
+<?php require'layout_footer.php';?>
 

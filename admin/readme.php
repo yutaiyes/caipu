@@ -1,5 +1,5 @@
 <?php
-require 'layout_header.php';
+require'layout_header.php';
 ?>
 <div class="page-header">
 <h3 class="mb-0"><i class="fas fa-file-code"></i> 开发文档</h3>
@@ -184,5 +184,5 @@ require 'layout_header.php';
 </section>
 </div>
 </div>
-<?php require 'layout_footer.php'; ?>
+<?php require'layout_footer.php';?>
 

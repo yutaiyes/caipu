@@ -1,145 +1,143 @@
 <?php
 session_start();
-// 设置时区为 UTC+8
-date_default_timezone_set('Asia/Shanghai');
-$db_path = '../data/data.db';
-$backup_dir = '../backups';
-if (!is_dir($backup_dir)) {
-@mkdir($backup_dir, 0755, true);
+$db_path='../data/data.db';
+$backup_dir='../backups';
+if(!is_dir($backup_dir)){
+@mkdir($backup_dir,0755,true);
 }
-function getDatabaseInfo($db_path) {
-if (!file_exists($db_path)) {
+function getDatabaseInfo($db_path){
+if(!file_exists($db_path)){
 return null;
 }
-$info = [
-'size' => filesize($db_path),
-'size_mb' => round(filesize($db_path) / 1024 / 1024, 2),
-'modified' => filemtime($db_path),
-'readable' => is_readable($db_path),
-'writable' => is_writable($db_path)
+$info=[
+'size'=>filesize($db_path),
+'size_mb'=>round(filesize($db_path)/1024/1024,2),
+'modified'=>filemtime($db_path),
+'readable'=>is_readable($db_path),
+'writable'=>is_writable($db_path)
 ];
-try {
-$db = new PDO('sqlite:' . $db_path);
-$tables = $db->query("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")->fetchAll(PDO::FETCH_COLUMN);
-$info['tables'] = $tables;
-$info['table_count'] = count($tables);
-$info['records'] = [];
-foreach ($tables as $table) {
-$count = $db->query("SELECT COUNT(*) FROM " . $table)->fetchColumn();
-$info['records'][$table] = $count;
+try{
+$db=new PDO('sqlite:'.$db_path);
+$tables=$db->query("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")->fetchAll(PDO::FETCH_COLUMN);
+$info['tables']=$tables;
+$info['table_count']=count($tables);
+$info['records']=[];
+foreach($tables as $table){
+$count=$db->query("SELECT COUNT(*) FROM ".$table)->fetchColumn();
+$info['records'][$table]=$count;
 }
-$page_size = $db->query("PRAGMA page_size")->fetchColumn();
-$page_count = $db->query("PRAGMA page_count")->fetchColumn();
-$freelist_count = $db->query("PRAGMA freelist_count")->fetchColumn();
-$info['page_size'] = $page_size;
-$info['page_count'] = $page_count;
-$info['freelist_count'] = $freelist_count;
-$info['used_pages'] = $page_count - $freelist_count;
-$info['fragmentation'] = $page_count > 0 ? round(($freelist_count / $page_count) * 100, 2) : 0;
-} catch (Exception $e) {
-$info['error'] = $e->getMessage();
+$page_size=$db->query("PRAGMA page_size")->fetchColumn();
+$page_count=$db->query("PRAGMA page_count")->fetchColumn();
+$freelist_count=$db->query("PRAGMA freelist_count")->fetchColumn();
+$info['page_size']=$page_size;
+$info['page_count']=$page_count;
+$info['freelist_count']=$freelist_count;
+$info['used_pages']=$page_count-$freelist_count;
+$info['fragmentation']=$page_count>0?round(($freelist_count/$page_count)*100,2):0;
+}catch(Exception $e){
+$info['error']=$e->getMessage();
 }
 return $info;
 }
-if (isset($_POST['action']) && $_POST['action'] === 'optimize') {
-$success = true;
-$message = '';
-try {
-if (!file_exists($db_path)) {
+if(isset($_POST['action'])&&$_POST['action']==='optimize'){
+$success=true;
+$message='';
+try{
+if(!file_exists($db_path)){
 throw new Exception('数据库文件不存在');
 }
-if (!is_writable($db_path)) {
+if(!is_writable($db_path)){
 throw new Exception('数据库文件不可写，请检查文件权限');
 }
-$before_info = getDatabaseInfo($db_path);
-$before_size = $before_info['size'];
-$timestamp = date('Y-m-d_H-i-s');
-$backup_file = $backup_dir . '/database_backup_' . $timestamp . '.db';
-if (!copy($db_path, $backup_file)) {
+$before_info=getDatabaseInfo($db_path);
+$before_size=$before_info['size'];
+$timestamp=date('Y-m-d_H-i-s');
+$backup_file=$backup_dir.'/database_backup_'.$timestamp.'.db';
+if(!copy($db_path,$backup_file)){
 throw new Exception('创建数据库备份失败');
 }
-$db = new PDO('sqlite:' . $db_path);
+$db=new PDO('sqlite:'.$db_path);
 $db->exec('VACUUM');
 $db->exec('ANALYZE');
-$db = null;
-$after_info = getDatabaseInfo($db_path);
-$after_size = $after_info['size'];
-$saved_size = $before_size - $after_size;
-$saved_percent = $before_size > 0 ? round(($saved_size / $before_size) * 100, 2) : 0;
-$message = "✓ 数据库优化成功！<br>";
-$message .= "优化前大小：" . number_format($before_size / 1024, 2) . " KB<br>";
-$message .= "优化后大小：" . number_format($after_size / 1024, 2) . " KB<br>";
-$message .= "节省空间：" . number_format($saved_size / 1024, 2) . " KB ({$saved_percent}%)<br>";
-$message .= "备份文件：" . basename($backup_file);
-} catch (Exception $e) {
-$success = false;
-$message = '优化失败：' . $e->getMessage();
+$db=null;
+$after_info=getDatabaseInfo($db_path);
+$after_size=$after_info['size'];
+$saved_size=$before_size-$after_size;
+$saved_percent=$before_size>0?round(($saved_size/$before_size)*100,2):0;
+$message="✓ 数据库优化成功！<br>";
+$message.="优化前大小：".number_format($before_size/1024,2)." KB<br>";
+$message.="优化后大小：".number_format($after_size/1024,2)." KB<br>";
+$message.="节省空间：".number_format($saved_size/1024,2)." KB ({$saved_percent}%)<br>";
+$message.="备份文件：".basename($backup_file);
+}catch(Exception $e){
+$success=false;
+$message='优化失败：'.$e->getMessage();
 }
-$_SESSION['db_optimize_message'] = $message;
-$_SESSION['db_optimize_success'] = $success;
+$_SESSION['db_optimize_message']=$message;
+$_SESSION['db_optimize_success']=$success;
 header('Location: db_optimize.php');
 exit;
 }
-if (isset($_POST['action']) && $_POST['action'] === 'restore') {
-$backup_file = $_POST['backup_file'] ?? '';
-$success = false;
-$message = '';
-if (empty($backup_file) || !file_exists($backup_file)) {
-$message = '备份文件不存在';
-} else {
-if (copy($backup_file, $db_path)) {
-$success = true;
-$message = '恢复成功！';
-} else {
-$message = '恢复失败，请检查文件权限';
+if(isset($_POST['action'])&&$_POST['action']==='restore'){
+$backup_file=$_POST['backup_file']??'';
+$success=false;
+$message='';
+if(empty($backup_file)||!file_exists($backup_file)){
+$message='备份文件不存在';
+}else{
+if(copy($backup_file,$db_path)){
+$success=true;
+$message='恢复成功！';
+}else{
+$message='恢复失败，请检查文件权限';
 }
 }
-$_SESSION['db_optimize_message'] = $message;
-$_SESSION['db_optimize_success'] = $success;
+$_SESSION['db_optimize_message']=$message;
+$_SESSION['db_optimize_success']=$success;
 header('Location: db_optimize.php');
 exit;
 }
-if (isset($_POST['action']) && $_POST['action'] === 'delete') {
-$backup_file = $_POST['backup_file'] ?? '';
-$success = false;
-$message = '';
-if (empty($backup_file) || !file_exists($backup_file)) {
-$message = '备份文件不存在';
-} else {
-if (unlink($backup_file)) {
-$success = true;
-$message = '备份文件已删除';
-} else {
-$message = '删除失败，请检查文件权限';
+if(isset($_POST['action'])&&$_POST['action']==='delete'){
+$backup_file=$_POST['backup_file']??'';
+$success=false;
+$message='';
+if(empty($backup_file)||!file_exists($backup_file)){
+$message='备份文件不存在';
+}else{
+if(unlink($backup_file)){
+$success=true;
+$message='备份文件已删除';
+}else{
+$message='删除失败，请检查文件权限';
 }
 }
-$_SESSION['db_optimize_message'] = $message;
-$_SESSION['db_optimize_success'] = $success;
+$_SESSION['db_optimize_message']=$message;
+$_SESSION['db_optimize_success']=$success;
 header('Location: db_optimize.php');
 exit;
 }
-require 'layout_header.php';
-$show_message = false;
-$message_text = '';
-$message_type = 'success';
-if (isset($_SESSION['db_optimize_message'])) {
-$message_text = $_SESSION['db_optimize_message'];
-$message_type = $_SESSION['db_optimize_success'] ? 'success' : 'danger';
-$show_message = true;
+require'layout_header.php';
+$show_message=false;
+$message_text='';
+$message_type='success';
+if(isset($_SESSION['db_optimize_message'])){
+$message_text=$_SESSION['db_optimize_message'];
+$message_type=$_SESSION['db_optimize_success']?'success':'danger';
+$show_message=true;
 unset($_SESSION['db_optimize_message']);
 unset($_SESSION['db_optimize_success']);
 }
-$db_info = getDatabaseInfo($db_path);
-$backups = [];
-if (is_dir($backup_dir)) {
-$backup_files = glob($backup_dir . '/database_backup_*.db');
+$db_info=getDatabaseInfo($db_path);
+$backups=[];
+if(is_dir($backup_dir)){
+$backup_files=glob($backup_dir.'/database_backup_*.db');
 rsort($backup_files);
-foreach ($backup_files as $file) {
-$backups[] = [
-'file' => $file,
-'name' => basename($file),
-'size' => filesize($file),
-'time' => filemtime($file)
+foreach($backup_files as $file){
+$backups[]=[
+'file'=>$file,
+'name'=>basename($file),
+'size'=>filesize($file),
+'time'=>filemtime($file)
 ];
 }
 }
@@ -165,33 +163,33 @@ $backups[] = [
 <i class="fas fa-info-circle"></i> 数据库信息
 </div>
 <div class="card-body">
-<?php if ($db_info): ?>
+<?php if($db_info):?>
 <div class="row">
 <div class="col-md-6">
 <h6>基本信息</h6>
 <table class="table table-sm">
 <tr>
 <td width="150"><strong>文件大小：</strong></td>
-<td><?= number_format($db_info['size'] / 1024, 2) ?> KB (<?= $db_info['size_mb'] ?> MB)</td>
+<td><?=number_format($db_info['size']/1024,2)?> KB (<?=$db_info['size_mb']?> MB)</td>
 </tr>
 <tr>
 <td><strong>最后修改：</strong></td>
-<td><?= date('Y-m-d H:i:s', $db_info['modified']) ?></td>
+<td><?=date('Y-m-d H:i:s',$db_info['modified'])?></td>
 </tr>
 <tr>
 <td><strong>表数量：</strong></td>
-<td><?= $db_info['table_count'] ?> 个</td>
+<td><?=$db_info['table_count']?> 个</td>
 </tr>
 <tr>
 <td><strong>文件权限：</strong></td>
 <td>
-<?php if ($db_info['readable'] && $db_info['writable']): ?>
+<?php if($db_info['readable']&&$db_info['writable']):?>
 <span class="badge bg-success">可读写</span>
-<?php elseif ($db_info['readable']): ?>
+<?php elseif($db_info['readable']):?>
 <span class="badge bg-warning">只读</span>
-<?php else: ?>
+<?php else:?>
 <span class="badge bg-danger">无权限</span>
-<?php endif; ?>
+<?php endif;?>
 </td>
 </tr>
 </table>
@@ -201,33 +199,33 @@ $backups[] = [
 <table class="table table-sm">
 <tr>
 <td width="150"><strong>页面大小：</strong></td>
-<td><?= $db_info['page_size'] ?> 字节</td>
+<td><?=$db_info['page_size']?> 字节</td>
 </tr>
 <tr>
 <td><strong>总页面数：</strong></td>
-<td><?= number_format($db_info['page_count']) ?></td>
+<td><?=number_format($db_info['page_count'])?></td>
 </tr>
 <tr>
 <td><strong>已使用页面：</strong></td>
-<td><?= number_format($db_info['used_pages']) ?></td>
+<td><?=number_format($db_info['used_pages'])?></td>
 </tr>
 <tr>
 <td><strong>空闲页面：</strong></td>
-<td><?= number_format($db_info['freelist_count']) ?></td>
+<td><?=number_format($db_info['freelist_count'])?></td>
 </tr>
 <tr>
 <td><strong>碎片率：</strong></td>
 <td>
-<?php if ($db_info['fragmentation'] > 20): ?>
-<span class="badge bg-danger"><?= $db_info['fragmentation'] ?>%</span>
+<?php if($db_info['fragmentation']>20):?>
+<span class="badge bg-danger"><?=$db_info['fragmentation']?>%</span>
 <small class="text-danger">建议优化</small>
-<?php elseif ($db_info['fragmentation'] > 10): ?>
-<span class="badge bg-warning"><?= $db_info['fragmentation'] ?>%</span>
+<?php elseif($db_info['fragmentation']>10):?>
+<span class="badge bg-warning"><?=$db_info['fragmentation']?>%</span>
 <small class="text-warning">可以优化</small>
-<?php else: ?>
-<span class="badge bg-success"><?= $db_info['fragmentation'] ?>%</span>
+<?php else:?>
+<span class="badge bg-success"><?=$db_info['fragmentation']?>%</span>
 <small class="text-success">状态良好</small>
-<?php endif; ?>
+<?php endif;?>
 </td>
 </tr>
 </table>
@@ -243,20 +241,20 @@ $backups[] = [
 </tr>
 </thead>
 <tbody>
-<?php foreach ($db_info['records'] as $table => $count): ?>
+<?php foreach($db_info['records'] as $table=>$count):?>
 <tr>
-<td><code><?= htmlspecialchars($table) ?></code></td>
-<td><?= number_format($count) ?> 条</td>
+<td><code><?=htmlspecialchars($table)?></code></td>
+<td><?=number_format($count)?> 条</td>
 </tr>
-<?php endforeach; ?>
+<?php endforeach;?>
 </tbody>
 </table>
 </div>
-<?php else: ?>
+<?php else:?>
 <div class="alert alert-danger">
 <i class="fas fa-exclamation-triangle"></i> 无法读取数据库信息
 </div>
-<?php endif; ?>
+<?php endif;?>
 </div>
 </div>
 <!-- 优化操作 -->
@@ -266,13 +264,13 @@ $backups[] = [
 </div>
 <div class="card-body">
 <!-- 消息显示区域 -->
-<?php if ($show_message): ?>
-<div class="alert alert-<?= $message_type ?> alert-dismissible fade show mb-3">
-<i class="fas fa-<?= $message_type == 'success' ? 'check-circle' : 'exclamation-circle' ?>"></i>
-<?= $message_text ?>
+<?php if($show_message):?>
+<div class="alert alert-<?=$message_type?> alert-dismissible fade show mb-3">
+<i class="fas fa-<?=$message_type=='success'?'check-circle':'exclamation-circle'?>"></i>
+<?=$message_text?>
 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
 </div>
-<?php endif; ?>
+<?php endif;?>
 <form method="post" onsubmit="return confirm('确定要优化数据库吗？\n\n✓ 优化前会自动创建备份\n✓ 使用SQLite官方VACUUM命令\n✓ 100%安全，不会丢失数据\n✓ 可随时恢复备份\n\n优化可能需要几秒钟时间。');">
 <input type="hidden" name="action" value="optimize">
 <div class="mb-3">
@@ -327,11 +325,11 @@ $backups[] = [
 <i class="fas fa-history"></i> 数据库备份
 </div>
 <div class="card-body">
-<?php if (empty($backups)): ?>
+<?php if(empty($backups)):?>
 <div class="alert alert-info">
 <i class="fas fa-info-circle"></i> 暂无数据库备份。优化数据库时会自动创建备份。
 </div>
-<?php else: ?>
+<?php else:?>
 <div class="table-responsive">
 <table class="table table-hover">
 <thead>
@@ -344,28 +342,28 @@ $backups[] = [
 </tr>
 </thead>
 <tbody>
-<?php foreach ($backups as $index => $backup): ?>
+<?php foreach($backups as $index=>$backup):?>
 <tr>
-<td><?= $index + 1 ?></td>
+<td><?=$index+1?></td>
 <td>
-<code><?= htmlspecialchars($backup['name']) ?></code>
+<code><?=htmlspecialchars($backup['name'])?></code>
 </td>
 <td>
-<?= number_format($backup['size'] / 1024, 2) ?> KB
+<?=number_format($backup['size']/1024,2)?> KB
 </td>
 <td>
-<?= date('Y-m-d H:i:s', $backup['time']) ?>
+<?=date('Y-m-d H:i:s',$backup['time'])?>
 </td>
 <td>
 <form method="post" style="display:inline;"
 onsubmit="return confirm('确定要恢复此备份吗？\n\n⚠️ 当前数据库将被覆盖！\n⚠️ 此操作不可撤销！');">
 <input type="hidden" name="action" value="restore">
-<input type="hidden" name="backup_file" value="<?= htmlspecialchars($backup['file']) ?>">
+<input type="hidden" name="backup_file" value="<?=htmlspecialchars($backup['file'])?>">
 <button type="submit" class="btn btn-sm btn-success" title="恢复备份">
 <i class="fas fa-undo"></i> 恢复
 </button>
 </form>
-<a href="<?= htmlspecialchars($backup['file']) ?>"
+<a href="<?=htmlspecialchars($backup['file'])?>"
 class="btn btn-sm btn-info"
 download
 title="下载备份">
@@ -374,21 +372,21 @@ title="下载备份">
 <form method="post" style="display:inline;"
 onsubmit="return confirm('确定要删除此备份吗？\n\n⚠️ 删除后无法恢复！\n⚠️ 请确保已有其他备份！\n⚠️ 建议先下载备份到本地！');">
 <input type="hidden" name="action" value="delete">
-<input type="hidden" name="backup_file" value="<?= htmlspecialchars($backup['file']) ?>">
+<input type="hidden" name="backup_file" value="<?=htmlspecialchars($backup['file'])?>">
 <button type="submit" class="btn btn-sm btn-danger" title="删除备份">
 <i class="fas fa-trash"></i> 删除
 </button>
 </form>
 </td>
 </tr>
-<?php endforeach; ?>
+<?php endforeach;?>
 </tbody>
 </table>
 </div>
 <div class="alert alert-secondary mt-3">
 <i class="fas fa-lightbulb"></i> <strong>提示：</strong>建议定期清理旧的备份文件，释放磁盘空间。删除前请先下载重要备份到本地。
 </div>
-<?php endif; ?>
+<?php endif;?>
 </div>
 </div>
 <!-- 使用说明 -->
@@ -437,5 +435,5 @@ onsubmit="return confirm('确定要删除此备份吗？\n\n⚠️ 删除后无�
 </ul>
 </div>
 </div>
-<?php require 'layout_footer.php'; ?>
+<?php require'layout_footer.php';?>
 

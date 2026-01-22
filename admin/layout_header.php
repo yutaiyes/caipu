@@ -1,15 +1,38 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
+// 引入配置文件（包含时区设置）
+require_once '../config.php';
+
+// 生成前端HTTP基础URL（用于后台预览）
+$protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+$host = $_SERVER['HTTP_HOST'];
+$script_path = dirname($_SERVER['PHP_SELF']);
+// 从admin目录返回到根目录
+$base_path = str_replace('/admin', '', $script_path);
+// 去除首尾斜杠
+$base_path = trim($base_path, '/');
+// 构建完整的基础URL
+if ($base_path === '') {
+    $base_http_url = $protocol . '://' . $host . '/';
+} else {
+    $base_http_url = $protocol . '://' . $host . '/' . $base_path . '/';
+}
+define('FRONTEND_BASE_URL', $base_http_url);
+
+if(session_status()===PHP_SESSION_NONE){
 session_start();
 }
-define('ADMIN_ACCESS', true);
-require_once 'security.php';
-if (!isset($_SESSION['admin'])) {
+if(!defined('ADMIN_ACCESS')){
+define('ADMIN_ACCESS',true);
+}
+require_once'security.php';
+if(!isset($_SESSION['admin'])){
 header('Location: login.php');
 exit;
 }
-$db = new PDO('sqlite:../data/data.db');
-$current_page = basename($_SERVER['PHP_SELF']);
+// 设置管理员登录状态，供前端检测
+$_SESSION['admin_logged_in'] = true;
+$db=new PDO('sqlite:../data/data.db');
+$current_page=basename($_SERVER['PHP_SELF']);
 ?>
 <!doctype html>
 <html lang="zh-CN">
@@ -39,46 +62,53 @@ $current_page = basename($_SERVER['PHP_SELF']);
 <div class="col-md-2 px-0 sidebar d-none d-md-block">
 <div class="text-center py-4">
 <h4 class="text-white mb-0"><i class="fas fa-utensils"></i> 菜谱管理</h4>
-<small class="text-white-50">欢迎，<?= htmlspecialchars($_SESSION['admin']) ?></small>
+<small class="text-white-50">欢迎，<?=htmlspecialchars($_SESSION['admin'])?></small>
+<?php if(defined('ENVIRONMENT_MODE') && ENVIRONMENT_MODE === 'development'): ?>
+<div class="mt-2">
+<span class="badge bg-warning text-dark">
+<i class="fas fa-code"></i> 开发模式
+</span>
+</div>
+<?php endif; ?>
 </div>
 <nav class="nav flex-column">
-<a class="nav-link <?= $current_page=='index.php'?'active':'' ?>" href="index.php">
+<a class="nav-link <?=$current_page=='index.php'?'active':''?>" href="index.php">
 <i class="fas fa-chart-line"></i> 仪表板
 </a>
-<a class="nav-link <?= $current_page=='recipe_list.php'?'active':'' ?>" href="recipe_list.php">
+<a class="nav-link <?=$current_page=='recipe_list.php'?'active':''?>" href="recipe_list.php">
 <i class="fas fa-utensils"></i> 菜谱列表
 </a>
-<a class="nav-link <?= $current_page=='recipe_add.php'?'active':'' ?>" href="recipe_add.php">
+<a class="nav-link <?=$current_page=='recipe_add.php'?'active':''?>" href="recipe_add.php">
 <i class="fas fa-plus-circle"></i> 新增菜谱
 </a>
-<a class="nav-link <?= $current_page=='category.php'?'active':'' ?>" href="category.php">
+<a class="nav-link <?=$current_page=='category.php'?'active':''?>" href="category.php">
 <i class="fas fa-tags"></i> 分类管理
 </a>
-<a class="nav-link <?= in_array($current_page,['page_list.php','page_add.php','page_edit.php'])?'active':'' ?>" href="page_list.php">
+<a class="nav-link <?=in_array($current_page,['page_list.php','page_add.php','page_edit.php'])?'active':''?>" href="page_list.php">
 <i class="fas fa-file-alt"></i> 页面管理
 </a>
-<a class="nav-link <?= $current_page=='settings.php'?'active':'' ?>" href="settings.php">
+<a class="nav-link <?=$current_page=='settings.php'?'active':''?>" href="settings.php">
 <i class="fas fa-cog"></i> 系统设置
 </a>
-<a class="nav-link <?= $current_page=='site_settings.php'?'active':'' ?>" href="site_settings.php">
+<a class="nav-link <?=$current_page=='site_settings.php'?'active':''?>" href="site_settings.php">
 <i class="fas fa-globe"></i> 网站设置
 </a>
-<a class="nav-link <?= $current_page=='compress.php'?'active':'' ?>" href="compress.php">
+<a class="nav-link <?=$current_page=='compress.php'?'active':''?>" href="compress.php">
 <i class="fas fa-compress"></i> 代码压缩
 </a>
-<a class="nav-link <?= $current_page=='db_optimize.php'?'active':'' ?>" href="db_optimize.php">
+<a class="nav-link <?=$current_page=='db_optimize.php'?'active':''?>" href="db_optimize.php">
 <i class="fas fa-database"></i> 数据库优化
 </a>
-<a class="nav-link <?= $current_page=='docs.php'?'active':'' ?>" href="docs.php">
+<a class="nav-link <?=$current_page=='docs.php'?'active':''?>" href="docs.php">
 <i class="fas fa-book"></i> 文档中心
 </a>
-<a class="nav-link <?= $current_page=='readme.php'?'active':'' ?>" href="readme.php">
+<a class="nav-link <?=$current_page=='readme.php'?'active':''?>" href="readme.php">
 <i class="fas fa-file-code"></i> 开发文档
 </a>
-<a class="nav-link <?= $current_page=='debug.php'?'active':'' ?>" href="debug.php">
+<a class="nav-link <?=$current_page=='debug.php'?'active':''?>" href="debug.php">
 <i class="fas fa-bug"></i> 程序调试
 </a>
-<a class="nav-link <?= $current_page=='profile.php'?'active':'' ?>" href="profile.php">
+<a class="nav-link <?=$current_page=='profile.php'?'active':''?>" href="profile.php">
 <i class="fas fa-key"></i> 修改密码
 </a>
 <hr class="text-white-50 mx-3">
@@ -97,46 +127,46 @@ $current_page = basename($_SERVER['PHP_SELF']);
 </div>
 <div class="offcanvas-body">
 <div class="text-center mb-3">
-<small class="text-white-50">欢迎，<?= htmlspecialchars($_SESSION['admin']) ?></small>
+<small class="text-white-50">欢迎，<?=htmlspecialchars($_SESSION['admin'])?></small>
 </div>
 <nav class="nav flex-column">
-<a class="nav-link <?= $current_page=='index.php'?'active':'' ?>" href="index.php">
+<a class="nav-link <?=$current_page=='index.php'?'active':''?>" href="index.php">
 <i class="fas fa-chart-line"></i> 仪表板
 </a>
-<a class="nav-link <?= $current_page=='recipe_list.php'?'active':'' ?>" href="recipe_list.php">
+<a class="nav-link <?=$current_page=='recipe_list.php'?'active':''?>" href="recipe_list.php">
 <i class="fas fa-utensils"></i> 菜谱列表
 </a>
-<a class="nav-link <?= $current_page=='recipe_add.php'?'active':'' ?>" href="recipe_add.php">
+<a class="nav-link <?=$current_page=='recipe_add.php'?'active':''?>" href="recipe_add.php">
 <i class="fas fa-plus-circle"></i> 新增菜谱
 </a>
-<a class="nav-link <?= $current_page=='category.php'?'active':'' ?>" href="category.php">
+<a class="nav-link <?=$current_page=='category.php'?'active':''?>" href="category.php">
 <i class="fas fa-tags"></i> 分类管理
 </a>
-<a class="nav-link <?= in_array($current_page,['page_list.php','page_add.php','page_edit.php'])?'active':'' ?>" href="page_list.php">
+<a class="nav-link <?=in_array($current_page,['page_list.php','page_add.php','page_edit.php'])?'active':''?>" href="page_list.php">
 <i class="fas fa-file-alt"></i> 页面管理
 </a>
-<a class="nav-link <?= $current_page=='settings.php'?'active':'' ?>" href="settings.php">
+<a class="nav-link <?=$current_page=='settings.php'?'active':''?>" href="settings.php">
 <i class="fas fa-cog"></i> 系统设置
 </a>
-<a class="nav-link <?= $current_page=='site_settings.php'?'active':'' ?>" href="site_settings.php">
+<a class="nav-link <?=$current_page=='site_settings.php'?'active':''?>" href="site_settings.php">
 <i class="fas fa-globe"></i> 网站设置
 </a>
-<a class="nav-link <?= $current_page=='compress.php'?'active':'' ?>" href="compress.php">
+<a class="nav-link <?=$current_page=='compress.php'?'active':''?>" href="compress.php">
 <i class="fas fa-compress"></i> 代码压缩
 </a>
-<a class="nav-link <?= $current_page=='db_optimize.php'?'active':'' ?>" href="db_optimize.php">
+<a class="nav-link <?=$current_page=='db_optimize.php'?'active':''?>" href="db_optimize.php">
 <i class="fas fa-database"></i> 数据库优化
 </a>
-<a class="nav-link <?= $current_page=='docs.php'?'active':'' ?>" href="docs.php">
+<a class="nav-link <?=$current_page=='docs.php'?'active':''?>" href="docs.php">
 <i class="fas fa-book"></i> 文档中心
 </a>
-<a class="nav-link <?= $current_page=='readme.php'?'active':'' ?>" href="readme.php">
+<a class="nav-link <?=$current_page=='readme.php'?'active':''?>" href="readme.php">
 <i class="fas fa-file-code"></i> 开发文档
 </a>
-<a class="nav-link <?= $current_page=='debug.php'?'active':'' ?>" href="debug.php">
+<a class="nav-link <?=$current_page=='debug.php'?'active':''?>" href="debug.php">
 <i class="fas fa-bug"></i> 程序调试
 </a>
-<a class="nav-link <?= $current_page=='profile.php'?'active':'' ?>" href="profile.php">
+<a class="nav-link <?=$current_page=='profile.php'?'active':''?>" href="profile.php">
 <i class="fas fa-key"></i> 修改密码
 </a>
 <hr class="text-white-50 mx-3">
@@ -149,4 +179,12 @@ $current_page = basename($_SERVER['PHP_SELF']);
 <!-- 主内容区 -->
 <div class="col-md-10 content-wrapper">
 <div class="p-4">
+<?php if(defined('ENVIRONMENT_MODE') && ENVIRONMENT_MODE === 'development'): ?>
+<div class="alert alert-warning alert-dismissible fade show" role="alert">
+<i class="fas fa-exclamation-triangle"></i> 
+<strong>开发模式已启用</strong> - 系统正在显示详细的错误信息和调试信息。生产环境请在 
+<a href="site_settings.php" class="alert-link">网站设置</a> 中切换为生产模式。
+<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+<?php endif; ?>
 

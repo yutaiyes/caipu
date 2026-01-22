@@ -1,0 +1,22 @@
+# OS & IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# Runtime Data
+/data/*.db
+/data/*.log
+/backups/
+
+# Allow empty template database if you want to distribute it (optional)
+!/data/empty.db
+
+# User Uploads (Ignore all content but keep directory structure)
+/uploads/*
+!/uploads/.gitkeep
+!/uploads/recipes/.gitkeep
+
+# Logs
+*.log

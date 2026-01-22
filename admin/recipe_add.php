@@ -1,8 +1,8 @@
 <?php
-require 'layout_header.php';
-$categories = $db->query("SELECT * FROM categories ORDER BY name")->fetchAll();
-if ($_POST) {
-$stmt = $db->prepare("
+require'layout_header.php';
+$categories=$db->query("SELECT * FROM categories ORDER BY name")->fetchAll();
+if($_POST){
+$stmt=$db->prepare("
 INSERT INTO recipes (title, description, content, category_id, cost_price, sell_price, is_public)
 VALUES (?, ?, ?, ?, ?, ?, ?)
 ");
@@ -10,12 +10,24 @@ $stmt->execute([
 $_POST['title'],
 $_POST['description'],
 $_POST['content'],
-$_POST['category_id'] ?: null,
-$_POST['cost_price'] ?: 0,
-$_POST['sell_price'] ?: 0,
-$_POST['is_public'] ?? 1
+$_POST['category_id']?:null,
+$_POST['cost_price']?:0,
+$_POST['sell_price']?:0,
+$_POST['is_public']??1
 ]);
-echo "<script>alert('添加成功！');location.href='recipe_list.php';</script>";
+$new_id = $db->lastInsertId();
+$rewrite_enabled = getSiteSetting('rewrite_enabled', 0);
+if ($rewrite_enabled) {
+    $preview_url = BASE_URI . encode_id($new_id) . ".html";
+} else {
+    $preview_url = BASE_URI . "recipe.php?id=" . $new_id;
+}
+echo "<script>
+if(confirm('添加成功！是否预览新添加的菜谱？')) {
+    window.open('" . $preview_url . "', '_blank');
+}
+location.href='recipe_list.php';
+</script>";
 exit;
 }
 ?>
@@ -45,11 +57,11 @@ exit;
 <label class="form-label">分类</label>
 <select class="form-select" name="category_id">
 <option value="">未分类</option>
-<?php foreach ($categories as $c): ?>
-<option value="<?= $c['id'] ?>">
-<?= htmlspecialchars($c['name']) ?>
+<?php foreach($categories as $c):?>
+<option value="<?=$c['id']?>">
+<?=htmlspecialchars($c['name'])?>
 </option>
-<?php endforeach; ?>
+<?php endforeach;?>
 </select>
 </div>
 </div>
@@ -141,27 +153,47 @@ let isAdvancedMode = true;
 function initAdvancedEditor() {
 if (easyMDE) return;
 easyMDE = new EasyMDE({
-element: document.getElementById("md"),
-uploadImage: true,
-imageUploadEndpoint: "upload.php",
-placeholder: "请输入菜谱详细内容，支持Markdown格式...\n\n提示：\n- 使用 # 创建标题\n- 使用 ** 加粗文字\n- 使用 - 创建列表\n- 点击工具栏图标插入图片、链接等",
-spellChecker: false,
-autosave: {
-enabled: true,
-uniqueId: "recipe_add",
-delay: 1000,
-},
-toolbar: [
-"bold", "italic", "heading", "|",
-"quote", "unordered-list", "ordered-list", "|",
-"link", "image", "|",
-"preview", "side-by-side", "fullscreen", "|",
-"guide"
-],
-status: ["lines", "words", "cursor"],
-renderingConfig: {
-codeSyntaxHighlighting: true,
-}
+    element: document.getElementById("md"),
+    uploadImage: true,
+    imageUploadEndpoint: "upload.php",
+    imageUploadFunction: function(file, onSuccess, onError) {
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        fetch('upload.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                onSuccess(data.url);
+            } else {
+                onError(data.message || '上传失败');
+            }
+        })
+        .catch(error => {
+            onError('上传失败: ' + error.message);
+        });
+    },
+    placeholder: "请输入菜谱详细内容，支持Markdown格式...\n\n提示：\n- 使用 # 创建标题\n- 使用 ** 加粗文字\n- 使用 - 创建列表\n- 点击工具栏图标插入图片、链接等\n- 可以直接拖拽图片到编辑器上传",
+    spellChecker: false,
+    autosave: {
+        enabled: true,
+        uniqueId: "recipe_add",
+        delay: 1000,
+    },
+    toolbar: [
+        "bold", "italic", "heading", "|",
+        "quote", "unordered-list", "ordered-list", "|",
+        "link", "upload-image", "|",
+        "preview", "side-by-side", "fullscreen", "|",
+        "guide"
+    ],
+    status: ["lines", "words", "cursor", "upload-image"],
+    renderingConfig: {
+        codeSyntaxHighlighting: true,
+    }
 });
 }
 // 切换到简单模式
@@ -207,5 +239,5 @@ document.getElementById('simpleMode').addEventListener('click', switchToSimpleMo
 document.getElementById('advancedMode').addEventListener('click', switchToAdvancedMode);
 });
 </script>
-<?php require 'layout_footer.php'; ?>
+<?php require'layout_footer.php';?>
 

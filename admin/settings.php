@@ -1,56 +1,85 @@
 <?php
-require 'layout_header.php';
-$config_file = '../config.php';
-$htaccess_file = '../.htaccess';
-$current_admin_dir = defined('ADMIN_DIR') ? ADMIN_DIR : 'admin';
-$rewrite_enabled = file_exists($htaccess_file);
-if ($_POST) {
-$success_messages = [];
-$error_messages = [];
-if (isset($_POST['admin_dir']) && $_POST['admin_dir'] != $current_admin_dir) {
-$new_admin_dir = preg_replace('/[^a-zA-Z0-9_-]/', '', $_POST['admin_dir']);
-if (empty($new_admin_dir)) {
-$error_messages[] = '管理目录名称不能为空，只能包含字母、数字、下划线和横线';
-} elseif ($new_admin_dir == $current_admin_dir) {
-} else {
-if (file_exists('../' . $new_admin_dir)) {
-$error_messages[] = '目录 "' . $new_admin_dir . '" 已存在，请使用其他名称';
-} else {
-if (rename('../' . $current_admin_dir, '../' . $new_admin_dir)) {
-$config_content = file_get_contents($config_file);
-$config_content = preg_replace(
+require'layout_header.php';
+$config_file='../config.php';
+$htaccess_file='../.htaccess';
+$current_admin_dir=defined('ADMIN_DIR')?ADMIN_DIR:'admin';
+$rewrite_enabled=file_exists($htaccess_file);
+if($_POST){
+$success_messages=[];
+$error_messages=[];
+if(isset($_POST['admin_dir'])&&$_POST['admin_dir']!=$current_admin_dir){
+$new_admin_dir=preg_replace('/[^a-zA-Z0-9_-]/','',$_POST['admin_dir']);
+if(empty($new_admin_dir)){
+$error_messages[]='管理目录名称不能为空，只能包含字母、数字、下划线和横线';
+}elseif($new_admin_dir==$current_admin_dir){
+}else{
+if(file_exists('../'.$new_admin_dir)){
+$error_messages[]='目录 "'.$new_admin_dir.'" 已存在，请使用其他名称';
+}else{
+if(rename('../'.$current_admin_dir,'../'.$new_admin_dir)){
+$config_content=file_get_contents($config_file);
+$config_content=preg_replace(
 "/define\('ADMIN_DIR',\s*'[^']*'\);/",
 "define('ADMIN_DIR', '$new_admin_dir');",
 $config_content
 );
-file_put_contents($config_file, $config_content);
-$success_messages[] = '管理目录已成功重命名为: ' . $new_admin_dir;
-$success_messages[] = '新的访问地址: ' . $_SERVER['HTTP_HOST'] . '/' . $new_admin_dir . '/';
-$success_messages[] = '请使用新地址访问后台（3秒后自动跳转）';
-echo "<script>setTimeout(function(){ location.href='../$new_admin_dir/settings.php'; }, 3000);</script>";
-} else {
-$error_messages[] = '目录重命名失败，请检查文件权限';
+file_put_contents($config_file,$config_content);
+$success_messages[]='管理目录已成功重命名为: '.$new_admin_dir;
+$success_messages[]='新的访问地址: '.$_SERVER['HTTP_HOST'].'/'.$new_admin_dir.'/';
+$success_messages[]='请使用新地址访问后台（3秒后自动跳转）';
+echo"<script>setTimeout(function(){ location.href='../$new_admin_dir/settings.php'; }, 3000);</script>";
+}else{
+$error_messages[]='目录重命名失败，请检查文件权限';
 }
 }
 }
 }
-if (isset($_POST['enable_rewrite'])) {
-$enable = $_POST['enable_rewrite'] == '1';
-if ($enable) {
-$htaccess_content = <<<EOT
-# 商用菜谱库伪静态规则
+if(isset($_POST['enable_rewrite'])){
+$enable=$_POST['enable_rewrite']=='1';
+
+// 更新数据库中的 rewrite_enabled 设置
+try {
+    $db_settings = new PDO('sqlite:../data/data.db');
+    // 检查表是否存在
+    $check = $db_settings->query("SELECT name FROM sqlite_master WHERE type='table' AND name='settings'")->fetch();
+    if ($check) {
+        // 检查键是否存在
+        $key_check = $db_settings->prepare("SELECT COUNT(*) FROM settings WHERE key = 'rewrite_enabled'");
+        $key_check->execute();
+        if ($key_check->fetchColumn() > 0) {
+            $stmt = $db_settings->prepare("UPDATE settings SET value = ?, updated_at = CURRENT_TIMESTAMP WHERE key = 'rewrite_enabled'");
+            $stmt->execute([$enable ? '1' : '0']);
+        } else {
+            $stmt = $db_settings->prepare("INSERT INTO settings (key, value, description) VALUES (?, ?, ?)");
+            $stmt->execute(['rewrite_enabled', $enable ? '1' : '0', '是否启用伪静态']);
+        }
+    }
+} catch (Exception $e) {
+    // 忽略数据库错误，不影响文件操作
+}
+
+if($enable){
+$htaccess_content=<<<EOT
+# 商用菜谱库伪静态规则 v2.0
 # Recipe System URL Rewrite Rules
+# 支持12位固定长度编码
 <IfModule mod_rewrite.c>
 RewriteEngine On
 RewriteBase /
 # 如果请求的是真实存在的文件或目录，直接访问
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-# 菜谱详情页: /recipe/数字ID.html -> recipe.php?id=数字ID
+# 菜谱详情页: 12位编码.html -> recipe.php?base=编码
+# 注意：菜谱编码不以A开头，避免与页面冲突
+RewriteRule ^([B-Z][A-Z0-9]{11})\.html$ recipe.php?base=$1 [L,QSA]
+# 兼容旧格式: /recipe/数字ID.html -> recipe.php?id=数字ID
 RewriteRule ^recipe/([0-9]+)\.html$ recipe.php?id=$1 [L,QSA]
 # 分类页面: /category/数字ID.html -> index.php?cat=数字ID
 RewriteRule ^category/([0-9]+)\.html$ index.php?cat=$1 [L,QSA]
-# 自定义页面: /page/标识.html -> page.php?slug=标识
+# 自定义页面: 12位编码.html -> page.php?base=编码
+# 注意：页面编码以A开头，与菜谱区分
+RewriteRule ^([A][A-Z0-9]{11})\.html$ page.php?base=$1 [L,QSA]
+# 兼容旧格式: /page/标识.html -> page.php?slug=标识
 RewriteRule ^page/([a-zA-Z0-9_-]+)\.html$ page.php?slug=$1 [L,QSA]
 # 首页: /index.html -> index.php
 RewriteRule ^index\.html$ index.php [L,QSA]
@@ -65,41 +94,41 @@ Options -Indexes
 # 字符编码
 AddDefaultCharset UTF-8
 EOT;
-if (file_put_contents($htaccess_file, $htaccess_content)) {
-$success_messages[] = '伪静态已启用，.htaccess文件已创建';
-} else {
-$error_messages[] = '无法创建.htaccess文件，请检查根目录写入权限';
+if(file_put_contents($htaccess_file,$htaccess_content)){
+$success_messages[]='伪静态已启用，.htaccess文件已创建';
+}else{
+$error_messages[]='无法创建.htaccess文件，请检查根目录写入权限';
 }
-} else {
-if (file_exists($htaccess_file)) {
-if (unlink($htaccess_file)) {
-$success_messages[] = '伪静态已禁用，.htaccess文件已删除';
-} else {
-$error_messages[] = '无法删除.htaccess文件，请手动删除';
-}
-}
+}else{
+if(file_exists($htaccess_file)){
+if(unlink($htaccess_file)){
+$success_messages[]='伪静态已禁用，.htaccess文件已删除';
+}else{
+$error_messages[]='无法删除.htaccess文件，请手动删除';
 }
 }
-if (!empty($success_messages)) {
+}
+}
+if(!empty($success_messages)){
 echo '<div class="alert alert-success alert-dismissible fade show" role="alert">';
-foreach ($success_messages as $msg) {
-echo '<div><i class="fas fa-check-circle"></i> ' . htmlspecialchars($msg) . '</div>';
+foreach($success_messages as $msg){
+echo '<div><i class="fas fa-check-circle"></i> '.htmlspecialchars($msg).'</div>';
 }
 echo '<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
 }
-if (!empty($error_messages)) {
+if(!empty($error_messages)){
 echo '<div class="alert alert-danger alert-dismissible fade show" role="alert">';
-foreach ($error_messages as $msg) {
-echo '<div><i class="fas fa-exclamation-circle"></i> ' . htmlspecialchars($msg) . '</div>';
+foreach($error_messages as $msg){
+echo '<div><i class="fas fa-exclamation-circle"></i> '.htmlspecialchars($msg).'</div>';
 }
 echo '<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
 }
-if (!empty($success_messages) && !isset($_POST['admin_dir'])) {
+if(!empty($success_messages)&&!isset($_POST['admin_dir'])){
 echo "<script>setTimeout(function(){ location.reload(); }, 2000);</script>";
 }
 }
-$current_admin_dir = defined('ADMIN_DIR') ? ADMIN_DIR : 'admin';
-$rewrite_enabled = file_exists($htaccess_file);
+$current_admin_dir=defined('ADMIN_DIR')?ADMIN_DIR:'admin';
+$rewrite_enabled=file_exists($htaccess_file);
 ?>
 <div class="page-header">
 <h3 class="mb-0"><i class="fas fa-cog"></i> 系统设置</h3>
@@ -119,7 +148,7 @@ $rewrite_enabled = file_exists($htaccess_file);
 <span class="text-danger">*</span>
 </label>
 <input type="text" class="form-control" name="admin_dir"
-value="<?= htmlspecialchars($current_admin_dir) ?>"
+value="<?=htmlspecialchars($current_admin_dir)?>"
 pattern="[a-zA-Z0-9_-]+"
 placeholder="例如：my_admin_2026"
 required>
@@ -132,7 +161,7 @@ required>
 <div class="mb-3">
 <label class="form-label">当前访问地址</label>
 <div class="alert alert-info mb-0">
-<code><?= $_SERVER['HTTP_HOST'] ?>/<?= htmlspecialchars($current_admin_dir) ?>/</code>
+<code><?=$_SERVER['HTTP_HOST']?>/<?=htmlspecialchars($current_admin_dir)?>/</code>
 </div>
 </div>
 </div>
@@ -164,8 +193,8 @@ required>
 <i class="fas fa-toggle-on"></i> 启用伪静态
 </label>
 <select class="form-select" name="enable_rewrite">
-<option value="0" <?= !$rewrite_enabled ? 'selected' : '' ?>>禁用</option>
-<option value="1" <?= $rewrite_enabled ? 'selected' : '' ?>>启用</option>
+<option value="0" <?=!$rewrite_enabled?'selected':''?>>禁用</option>
+<option value="1" <?=$rewrite_enabled?'selected':''?>>启用</option>
 </select>
 <small class="text-muted">
 启用后将创建.htaccess文件，需要服务器支持mod_rewrite模块
@@ -174,23 +203,50 @@ required>
 <div class="mb-3">
 <label class="form-label">当前状态</label>
 <div>
-<?php if ($rewrite_enabled): ?>
+<?php if($rewrite_enabled):?>
 <span class="badge bg-success">
 <i class="fas fa-check-circle"></i> 已启用
 </span>
 <small class="text-muted ms-2">.htaccess文件已存在</small>
-<?php else: ?>
+<?php else:?>
 <span class="badge bg-secondary">
 <i class="fas fa-times-circle"></i> 未启用
 </span>
 <small class="text-muted ms-2">使用默认URL格式</small>
-<?php endif; ?>
+<?php endif;?>
 </div>
 </div>
+<?php
+// 获取当前管理目录路径
+$admin_path = defined('ADMIN_DIR') ? ADMIN_DIR : 'admin';
+?>
+
 <button type="submit" class="btn btn-primary">
 <i class="fas fa-save"></i> 保存设置
 </button>
+<a href="clear_cache.php" class="btn btn-warning">
+<i class="fas fa-broom"></i> 缓存管理
+</a>
 </form>
+</div>
+</div>
+
+<!-- 缓存清理提醒 -->
+<div class="card mb-4">
+<div class="card-header bg-warning text-dark">
+<i class="fas fa-exclamation-triangle"></i> 重要提醒
+</div>
+<div class="card-body">
+<div class="alert alert-warning mb-0">
+<h6><i class="fas fa-lightbulb"></i> 伪静态设置后必读</h6>
+<ul class="mb-0">
+<li><strong>设置完成后：</strong>点击"缓存管理"进入缓存清理页面</li>
+<li><strong>清理缓存作用：</strong>重新生成.htaccess文件 + 清理PHP缓存</li>
+<li><strong>浏览器刷新：</strong>使用 Ctrl+F5 强制刷新</li>
+<li><strong>移动端注意：</strong>手机浏览器缓存更严重，建议清除浏览器数据</li>
+<li><strong>仍然无效？</strong>检查服务器是否支持mod_rewrite模块</li>
+</ul>
+</div>
 </div>
 </div>
 <!-- 伪静态规则说明 -->
@@ -204,9 +260,9 @@ required>
 <table class="table table-bordered">
 <thead>
 <tr>
-<th width="30%">页面类型</th>
+<th width="25%">页面类型</th>
 <th width="35%">原始URL</th>
-<th width="35%">伪静态URL</th>
+<th width="40%">伪静态URL</th>
 </tr>
 </thead>
 <tbody>
@@ -217,6 +273,11 @@ required>
 </tr>
 <tr>
 <td><i class="fas fa-utensils"></i> 菜谱详情</td>
+<td><code>recipe.php?base=540000000001</code></td>
+<td><code>540000000001.html</code></td>
+</tr>
+<tr>
+<td><i class="fas fa-utensils"></i> 菜谱详情(兼容)</td>
 <td><code>recipe.php?id=1</code></td>
 <td><code>recipe/1.html</code></td>
 </tr>
@@ -227,11 +288,28 @@ required>
 </tr>
 <tr>
 <td><i class="fas fa-file-alt"></i> 自定义页面</td>
+<td><code>page.php?base=540000000001</code></td>
+<td><code>540000000001.html</code></td>
+</tr>
+<tr>
+<td><i class="fas fa-file-alt"></i> 自定义页面(兼容)</td>
 <td><code>page.php?slug=about</code></td>
 <td><code>page/about.html</code></td>
 </tr>
 </tbody>
 </table>
+</div>
+<h6 class="mt-4">12位编码说明</h6>
+<div class="alert alert-info">
+<p class="mb-2"><strong>新版本特性：</strong>菜谱详情页和自定义页面都使用12位固定长度编码，提供更美观和安全的URL。</p>
+<p class="mb-2"><strong>编码示例：</strong></p>
+<ul class="mb-2">
+<li>菜谱 ID 1 → <code>540000000001.html</code></li>
+<li>菜谱 ID 12 → <code>94000000000C.html</code></li>
+<li>页面 ID 1 → <code>A10000000001.html</code></li>
+<li>页面 ID 5 → <code>FE5000000005.html</code></li>
+</ul>
+<p class="mb-0"><strong>优势：</strong>隐藏真实ID、防止遍历攻击、URL更美观，同时保持向后兼容。</p>
 </div>
 <h6 class="mt-4">服务器要求</h6>
 <ul>
@@ -278,16 +356,23 @@ Require all granted
 <li>粘贴以下规则并保存</li>
 </ol>
 <p class="mb-2"><strong>Apache规则（宝塔默认）：</strong></p>
-<pre class="mb-3"><code>RewriteEngine On
+<pre class="mb-3"><code># 商用菜谱库伪静态规则 v2.0
+RewriteEngine On
 RewriteBase /
 # 如果请求的是真实存在的文件或目录，直接访问
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-# 菜谱详情页
+# 菜谱详情页: 12位编码.html -> recipe.php?base=编码
+# 注意：菜谱编码不以A开头，避免与页面冲突
+RewriteRule ^([B-Z][A-Z0-9]{11})\.html$ recipe.php?base=$1 [L,QSA]
+# 兼容旧格式: /recipe/数字ID.html -> recipe.php?id=数字ID
 RewriteRule ^recipe/([0-9]+)\.html$ recipe.php?id=$1 [L,QSA]
 # 分类页面
 RewriteRule ^category/([0-9]+)\.html$ index.php?cat=$1 [L,QSA]
-# 自定义页面
+# 自定义页面: 12位编码.html -> page.php?base=编码
+# 注意：页面编码以A开头，与菜谱区分
+RewriteRule ^([A][A-Z0-9]{11})\.html$ page.php?base=$1 [L,QSA]
+# 兼容旧格式: /page/标识.html -> page.php?slug=标识
 RewriteRule ^page/([a-zA-Z0-9_-]+)\.html$ page.php?slug=$1 [L,QSA]
 # 首页
 RewriteRule ^index\.html$ index.php [L,QSA]</code></pre>
@@ -296,8 +381,14 @@ RewriteRule ^index\.html$ index.php [L,QSA]</code></pre>
 try_files $uri $uri/ @rewrite;
 }
 location @rewrite {
+# 菜谱详情页: 12位编码（不以A开头）
+rewrite ^/([B-Z][A-Z0-9]{11})\.html$ /recipe.php?base=$1 last;
+# 兼容旧格式
 rewrite ^/recipe/([0-9]+)\.html$ /recipe.php?id=$1 last;
 rewrite ^/category/([0-9]+)\.html$ /index.php?cat=$1 last;
+# 自定义页面: 12位编码（以A开头）
+rewrite ^/([A][A-Z0-9]{11})\.html$ /page.php?base=$1 last;
+# 兼容旧格式
 rewrite ^/page/([a-zA-Z0-9_-]+)\.html$ /page.php?slug=$1 last;
 rewrite ^/index\.html$ /index.php last;
 }</code></pre>
@@ -308,10 +399,20 @@ rewrite ^/index\.html$ /index.php last;
 <h6 class="mt-4">测试伪静态是否生效</h6>
 <ol>
 <li>启用伪静态设置</li>
-<li>访问前端首页，点击任意菜谱</li>
-<li>查看浏览器地址栏，如果显示 <code>recipe/数字.html</code> 格式则表示成功</li>
+<li>访问前端首页，点击任意菜谱或页面</li>
+<li>查看浏览器地址栏：
+   <ul>
+   <li><strong>菜谱新格式：</strong><code>540000000001.html</code>（不以A开头）</li>
+   <li><strong>页面新格式：</strong><code>A10000000001.html</code>（以A开头）</li>
+   <li><strong>兼容格式：</strong><code>recipe/1.html</code> 或 <code>page/about.html</code></li>
+   <li><strong>未生效：</strong><code>recipe.php?id=1</code> 等原始格式</li>
+   </ul>
+</li>
 <li>如果显示404错误，请检查服务器配置</li>
 </ol>
+<div class="alert alert-warning mt-3">
+<p class="mb-0"><strong>注意：</strong>12位编码格式需要PHP 8.0+版本支持，如果服务器版本较低可能只显示兼容格式。</p>
+</div>
 <h6 class="mt-4">常见问题</h6>
 <div class="accordion" id="faqAccordion">
 <div class="accordion-item">
@@ -393,15 +494,15 @@ rewrite ^/index\.html$ /index.php last;
 <table class="table table-sm">
 <tr>
 <td width="40%"><strong>PHP版本</strong></td>
-<td><?= phpversion() ?></td>
+<td><?=phpversion()?></td>
 </tr>
 <tr>
 <td><strong>服务器软件</strong></td>
-<td><?= $_SERVER['SERVER_SOFTWARE'] ?? 'Unknown' ?></td>
+<td><?=$_SERVER['SERVER_SOFTWARE']??'Unknown'?></td>
 </tr>
 <tr>
 <td><strong>当前管理目录</strong></td>
-<td><code><?= htmlspecialchars($current_admin_dir) ?></code></td>
+<td><code><?=htmlspecialchars($current_admin_dir)?></code></td>
 </tr>
 </table>
 </div>
@@ -410,31 +511,31 @@ rewrite ^/index\.html$ /index.php last;
 <tr>
 <td width="40%"><strong>伪静态状态</strong></td>
 <td>
-<?php if ($rewrite_enabled): ?>
+<?php if($rewrite_enabled):?>
 <span class="badge bg-success">已启用</span>
-<?php else: ?>
+<?php else:?>
 <span class="badge bg-secondary">未启用</span>
-<?php endif; ?>
+<?php endif;?>
 </td>
 </tr>
 <tr>
 <td><strong>根目录可写</strong></td>
 <td>
-<?php if (is_writable('..')): ?>
+<?php if(is_writable('..')):?>
 <span class="badge bg-success">是</span>
-<?php else: ?>
+<?php else:?>
 <span class="badge bg-danger">否</span>
-<?php endif; ?>
+<?php endif;?>
 </td>
 </tr>
 <tr>
 <td><strong>配置文件</strong></td>
 <td>
-<?php if (file_exists($config_file)): ?>
+<?php if(file_exists($config_file)):?>
 <span class="badge bg-success">存在</span>
-<?php else: ?>
+<?php else:?>
 <span class="badge bg-danger">不存在</span>
-<?php endif; ?>
+<?php endif;?>
 </td>
 </tr>
 </table>
@@ -442,5 +543,5 @@ rewrite ^/index\.html$ /index.php last;
 </div>
 </div>
 </div>
-<?php require 'layout_footer.php'; ?>
+<?php require'layout_footer.php';?>
 

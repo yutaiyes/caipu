@@ -1,27 +1,51 @@
 <?php
-require 'layout_header.php';
-$message = '';
-$error = '';
-if ($_POST) {
-$old_pwd = $_POST['old_password'];
-$new_pwd = $_POST['new_password'];
-$confirm_pwd = $_POST['confirm_password'];
-$stmt = $db->prepare("SELECT * FROM admin WHERE username=?");
+session_start();
+require'../config.php';
+if(!isset($_SESSION['admin'])){
+header('Location: login.php');
+exit;
+}
+$db=new PDO('sqlite:'.DB_PATH);
+$db->setAttribute(PDO::ATTR_ERRMODE,PDO::ERRMODE_EXCEPTION);
+if($_SERVER['REQUEST_METHOD']==='POST'){
+$old_pwd=$_POST['old_password']??'';
+$new_pwd=$_POST['new_password']??'';
+$confirm_pwd=$_POST['confirm_password']??'';
+if(empty($old_pwd)||empty($new_pwd)||empty($confirm_pwd)){
+$_SESSION['profile_error']='所有字段都必须填写！';
+}else{
+$stmt=$db->prepare("SELECT * FROM admin WHERE username = ?");
 $stmt->execute([$_SESSION['admin']]);
-$user = $stmt->fetch(PDO::FETCH_ASSOC);
-if (!password_verify($old_pwd, $user['password'])) {
-$error = '旧密码错误！';
-} elseif (strlen($new_pwd) < 6) {
-$error = '新密码长度不能少于6位！';
-} elseif ($new_pwd !== $confirm_pwd) {
-$error = '两次输入的新密码不一致！';
-} else {
-$new_hash = password_hash($new_pwd, PASSWORD_DEFAULT);
-$stmt = $db->prepare("UPDATE admin SET password=? WHERE username=?");
-$stmt->execute([$new_hash, $_SESSION['admin']]);
-$message = '密码修改成功！';
+$user=$stmt->fetch(PDO::FETCH_ASSOC);
+if(!$user){
+$_SESSION['profile_error']='用户不存在！';
+}elseif(!password_verify($old_pwd,$user['password'])){
+$_SESSION['profile_error']='旧密码错误！';
+}elseif(strlen($new_pwd)<6){
+$_SESSION['profile_error']='新密码长度不能少于6位！';
+}elseif($new_pwd!==$confirm_pwd){
+$_SESSION['profile_error']='两次输入的新密码不一致！';
+}else{
+$new_hash=password_hash($new_pwd,PASSWORD_DEFAULT);
+$stmt=$db->prepare("UPDATE admin SET password = ? WHERE username = ?");
+if($stmt->execute([$new_hash,$_SESSION['admin']])){
+$_SESSION['profile_message']='密码修改成功！请重新登录。';
+unset($_SESSION['admin']);
+header('Location: login.php');
+exit;
+}else{
+$_SESSION['profile_error']='密码修改失败，请重试！';
 }
 }
+}
+header('Location: profile.php');
+exit;
+}
+require'layout_header.php';
+$message=$_SESSION['profile_message']??'';
+$error=$_SESSION['profile_error']??'';
+unset($_SESSION['profile_message']);
+unset($_SESSION['profile_error']);
 ?>
 <div class="page-header">
 <h3 class="mb-0"><i class="fas fa-key"></i> 修改密码</h3>
@@ -30,23 +54,23 @@ $message = '密码修改成功！';
 <div class="col-md-6">
 <div class="card">
 <div class="card-body">
-<?php if ($message): ?>
+<?php if($message):?>
 <div class="alert alert-success alert-dismissible fade show">
-<i class="fas fa-check-circle"></i> <?= $message ?>
+<i class="fas fa-check-circle"></i> <?=$message?>
 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
 </div>
-<?php endif; ?>
-<?php if ($error): ?>
+<?php endif;?>
+<?php if($error):?>
 <div class="alert alert-danger alert-dismissible fade show">
-<i class="fas fa-exclamation-circle"></i> <?= $error ?>
+<i class="fas fa-exclamation-circle"></i> <?=$error?>
 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
 </div>
-<?php endif; ?>
+<?php endif;?>
 <form method="post">
 <div class="mb-3">
 <label class="form-label">当前用户名</label>
 <input type="text" class="form-control"
-value="<?= htmlspecialchars($_SESSION['admin']) ?>" disabled>
+value="<?=htmlspecialchars($_SESSION['admin'])?>" disabled>
 </div>
 <div class="mb-3">
 <label class="form-label">旧密码 <span class="text-danger">*</span></label>
@@ -82,5 +106,5 @@ placeholder="再次输入新密码" required>
 </div>
 </div>
 </div>
-<?php require 'layout_footer.php'; ?>
+<?php require'layout_footer.php';?>
 

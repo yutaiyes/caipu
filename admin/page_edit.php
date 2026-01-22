@@ -1,19 +1,19 @@
 <?php
-require 'layout_header.php';
-try {
+require'layout_header.php';
+try{
 $db->query("SELECT 1 FROM pages LIMIT 1");
-} catch (Exception $e) {
+}catch(Exception $e){
 echo "<script>alert('请先运行数据库升级脚本：upgrade_pages.php');location.href='page_list.php';</script>";
 exit;
 }
-$id = (int)$_GET['id'];
-$page = $db->query("SELECT * FROM pages WHERE id=$id")->fetch();
-if (!$page) {
+$id=(int)$_GET['id'];
+$page=$db->query("SELECT * FROM pages WHERE id=$id")->fetch();
+if(!$page){
 echo "<script>alert('页面不存在！');location.href='page_list.php';</script>";
 exit;
 }
-if ($_POST) {
-$stmt = $db->prepare("
+if($_POST){
+$stmt=$db->prepare("
 UPDATE pages
 SET title=?, slug=?, content=?, type=?, is_public=?, sort_order=?, updated_at=CURRENT_TIMESTAMP
 WHERE id=?
@@ -42,14 +42,14 @@ exit;
 <div class="mb-3">
 <label class="form-label">页面标题 <span class="text-danger">*</span></label>
 <input class="form-control" name="title"
-value="<?= htmlspecialchars($page['title']) ?>" required>
+value="<?=htmlspecialchars($page['title'])?>" required>
 </div>
 </div>
 <div class="col-12 col-md-6">
 <div class="mb-3">
 <label class="form-label">URL标识 <span class="text-danger">*</span></label>
 <input class="form-control" name="slug"
-value="<?= htmlspecialchars($page['slug']) ?>" required>
+value="<?=htmlspecialchars($page['slug'])?>" required>
 <small class="text-muted">访问地址：page.php?slug=标识</small>
 </div>
 </div>
@@ -59,11 +59,11 @@ value="<?= htmlspecialchars($page['slug']) ?>" required>
 <div class="mb-3">
 <label class="form-label">页面类型</label>
 <select class="form-select" name="type">
-<option value="custom" <?= $page['type']=='custom'?'selected':'' ?>>自定义</option>
-<option value="about" <?= $page['type']=='about'?'selected':'' ?>>关于</option>
-<option value="privacy" <?= $page['type']=='privacy'?'selected':'' ?>>隐私</option>
-<option value="contact" <?= $page['type']=='contact'?'selected':'' ?>>联系</option>
-<option value="partnership" <?= $page['type']=='partnership'?'selected':'' ?>>合作</option>
+<option value="custom" <?=$page['type']=='custom'?'selected':''?>>自定义</option>
+<option value="about" <?=$page['type']=='about'?'selected':''?>>关于</option>
+<option value="privacy" <?=$page['type']=='privacy'?'selected':''?>>隐私</option>
+<option value="contact" <?=$page['type']=='contact'?'selected':''?>>联系</option>
+<option value="partnership" <?=$page['type']=='partnership'?'selected':''?>>合作</option>
 </select>
 </div>
 </div>
@@ -71,8 +71,8 @@ value="<?= htmlspecialchars($page['slug']) ?>" required>
 <div class="mb-3">
 <label class="form-label">状态</label>
 <select class="form-select" name="is_public">
-<option value="1" <?= $page['is_public']?'selected':'' ?>>公开</option>
-<option value="0" <?= !$page['is_public']?'selected':'' ?>>隐藏</option>
+<option value="1" <?=$page['is_public']?'selected':''?>>公开</option>
+<option value="0" <?=!$page['is_public']?'selected':''?>>隐藏</option>
 </select>
 </div>
 </div>
@@ -80,7 +80,7 @@ value="<?= htmlspecialchars($page['slug']) ?>" required>
 <div class="mb-3">
 <label class="form-label">排序</label>
 <input type="number" class="form-control" name="sort_order"
-value="<?= $page['sort_order'] ?>">
+value="<?=$page['sort_order']?>">
 </div>
 </div>
 </div>
@@ -91,7 +91,7 @@ value="<?= $page['sort_order'] ?>">
 <i class="fas fa-info-circle"></i> 支持Markdown格式
 </small>
 </div>
-<textarea id="md" name="content"><?= htmlspecialchars($page['content']) ?></textarea>
+<textarea id="md" name="content"><?=htmlspecialchars($page['content'])?></textarea>
 </div>
 <div class="d-flex flex-column flex-md-row gap-2">
 <button type="submit" class="btn btn-primary">
@@ -100,7 +100,7 @@ value="<?= $page['sort_order'] ?>">
 <a href="page_list.php" class="btn btn-secondary">
 <i class="fas fa-times"></i> 取消
 </a>
-<a href="../page.php?slug=<?= $page['slug'] ?>"
+<a href="<?=BASE_URI?>page.php?slug=<?=$page['slug']?>"
 class="btn btn-info" target="_blank">
 <i class="fas fa-eye"></i> 预览页面
 </a>
@@ -125,5 +125,5 @@ toolbar: [
 status: ["lines", "words", "cursor"]
 });
 </script>
-<?php require 'layout_footer.php'; ?>
+<?php require'layout_footer.php';?>
 
