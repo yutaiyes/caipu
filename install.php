@@ -121,7 +121,7 @@ if ($auto_install || isset($_POST['install'])) {
             ['geo_placename', '中国', '地理位置名称'],
             ['geo_position', '', '地理坐标 (纬度;经度)'],
             ['rewrite_enabled', '0', '是否开启伪静态 (1:开启, 0:关闭)'],
-        ];];
+        ];
         
         $stmt = $db->prepare("INSERT INTO settings (key, value, description) VALUES (?, ?, ?)");
         foreach ($default_settings as $setting) {
