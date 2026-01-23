@@ -85,41 +85,41 @@
 
 ### 用户文档
 
-1. **[快速开始](docs.php?doc=01_快速开始)** - 系统安装和初始配置
-2. **[功能使用指南](docs.php?doc=02_功能使用指南)** - 详细的功能使用说明
-3. **[系统设置说明](docs.php?doc=03_系统设置说明)** - 系统配置和自定义
-4. **[高级功能](docs.php?doc=04_高级功能)** - 高级功能和技巧
-5. **[安全指南](docs.php?doc=05_安全指南)** - 安全设置和最佳实践
-6. **[故障排除](docs.php?doc=06_故障排除)** - 常见问题解决方案
-7. **[更新日志](docs.php?doc=07_更新日志)** - 版本更新记录
-8. **[常见问题](docs.php?doc=08_常见问题)** - FAQ
-9. **[开发指南](docs.php?doc=09_开发指南)** - 开发者文档
-10. **[联系支持](docs.php?doc=10_联系支持)** - 获取帮助
+1. **[快速开始](readme/01_快速开始.md)** - 系统安装和初始配置
+2. **[功能使用指南](readme/02_功能使用指南.md)** - 详细的功能使用说明
+3. **[系统设置说明](readme/03_系统设置说明.md)** - 系统配置和自定义
+4. **[高级功能](readme/04_高级功能.md)** - 高级功能和技巧
+5. **[安全指南](readme/05_安全指南.md)** - 安全设置和最佳实践
+6. **[故障排除](readme/06_故障排除.md)** - 常见问题解决方案
+7. **[更新日志](readme/07_更新日志.md)** - 版本更新记录
+8. **[常见问题](readme/08_常见问题.md)** - FAQ
+9. **[开发指南](readme/09_开发指南.md)** - 开发者文档
+10. **[联系支持](readme/10_联系支持.md)** - 获取帮助
 
 ### 技术文档
 
-- **[前端公共文件使用指南](docs.php?doc=FRONTEND_INCLUDES)** - 前端开发指南
-- **[前端统一化完成报告](docs.php?doc=FRONTEND_UNIFIED)** - 前端架构说明
-- **[安装改进说明](docs.php?doc=INSTALL_IMPROVEMENT)** - 安装向导优化
-- **[文档优化说明](docs.php?doc=DOCUMENTATION_OPTIMIZATION)** - 文档系统优化
-- **[清理总结](docs.php?doc=CLEANUP_SUMMARY)** - 系统清理和优化总结
+- **[前端公共文件使用指南](readme/FRONTEND_INCLUDES.md)** - 前端开发指南
+- **[前端统一化完成报告](readme/FRONTEND_UNIFIED.md)** - 前端架构说明
+- **[安装改进说明](readme/INSTALL_IMPROVEMENT.md)** - 安装向导优化
+- **[文档优化说明](readme/DOCUMENTATION_OPTIMIZATION.md)** - 文档系统优化
+- **[清理总结](readme/CLEANUP_SUMMARY.md)** - 系统清理和优化总结
 
 ## 🚀 快速链接
 
 ### 新用户
-1. 阅读 [快速开始](docs.php?doc=01_快速开始) 了解如何安装系统
-2. 查看 [功能使用指南](docs.php?doc=02_功能使用指南) 学习基本操作
-3. 参考 [系统设置说明](docs.php?doc=03_系统设置说明) 自定义您的网站
+1. 阅读 [快速开始](readme/01_快速开始.md) 了解如何安装系统
+2. 查看 [功能使用指南](readme/02_功能使用指南.md) 学习基本操作
+3. 参考 [系统设置说明](readme/03_系统设置说明.md) 自定义您的网站
 
 ### 管理员
-- [系统设置说明](docs.php?doc=03_系统设置说明) - 配置网站信息
-- [安全指南](docs.php?doc=05_安全指南) - 保护您的系统
-- [高级功能](docs.php?doc=04_高级功能) - 使用高级特性
+- [系统设置说明](readme/03_系统设置说明.md) - 配置网站信息
+- [安全指南](readme/05_安全指南.md) - 保护您的系统
+- [高级功能](readme/04_高级功能.md) - 使用高级特性
 
 ### 开发者
-- [开发指南](docs.php?doc=09_开发指南) - 开发和扩展系统
-- [前端公共文件使用指南](docs.php?doc=FRONTEND_INCLUDES) - 前端开发
-- [前端统一化完成报告](docs.php?doc=FRONTEND_UNIFIED) - 架构说明
+- [开发指南](readme/09_开发指南.md) - 开发和扩展系统
+- [前端公共文件使用指南](readme/FRONTEND_INCLUDES.md) - 前端开发
+- [前端统一化完成报告](readme/FRONTEND_UNIFIED.md) - 架构说明
 
 ## 📖 主要功能
 
@@ -159,9 +159,9 @@
 
 如果您遇到问题：
 
-1. 查看 [故障排除](docs.php?doc=06_故障排除)
-2. 阅读 [常见问题](docs.php?doc=08_常见问题)
-3. 参考 [联系支持](docs.php?doc=10_联系支持)
+1. 查看 [故障排除](readme/06_故障排除.md)
+2. 阅读 [常见问题](readme/08_常见问题.md)
+3. 参考 [联系支持](readme/10_联系支持.md)
 
 ## 🎯 快速操作
 
@@ -238,11 +238,11 @@ URL: http://your-domain.com/admin/
 
 ## 🔄 更新说明
 
-查看 [更新日志](docs.php?doc=07_更新日志) 了解最新更新。
+查看 [更新日志](readme/07_更新日志md) 了解最新更新。
 
 ## 📧 联系我们
 
-如需帮助，请参考 [联系支持](docs.php?doc=10_联系支持)。
+如需帮助，请参考 [联系支持](readme/10_联系支持.md)。
 
 ---
 
