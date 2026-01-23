@@ -5,6 +5,11 @@ Thumbs.db
 .idea/
 *.swp
 
+# Compressed Files
+*.zip
+*.tar.gz
+*.rar
+
 # Runtime Data
 /data/*.db
 /data/*.log
