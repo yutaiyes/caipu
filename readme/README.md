@@ -25,8 +25,8 @@
 2. **上传文件**：将所有文件上传至 Web 服务器根目录。
 3. **权限设置**：确保 `data/` 和 `uploads/` 目录具有写入权限 (Linux 下建议 755 或 777)。
 4. **初始化数据库**：
-   - **方式 A (全新安装)**：访问 `http://your-domain.com/install.php`，按照向导设置管理员账号并初始化。
-   - **方式 B (快速部署)**：将 `data/empty.db` 重命名为 `data/data.db`，直接使用默认账号登录。
+   - **全新安装**：访问 `http://your-domain.com/install.php`，按照向导设置管理员账号并初始化。
+   
 5. **登录后台**：
    - 访问地址：`http://your-domain.com/admin/`
    - 默认账号：`admin`
