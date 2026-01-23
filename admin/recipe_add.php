@@ -1,5 +1,10 @@
 <?php
 require'layout_header.php';
+
+// 演示模式检查
+require_once 'demo_mode_check.php';
+check_demo_mode_post();
+
 $categories=$db->query("SELECT * FROM categories ORDER BY name")->fetchAll();
 if($_POST){
 $stmt=$db->prepare("

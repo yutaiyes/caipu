@@ -1,5 +1,10 @@
 <?php
 require'layout_header.php';
+
+// 演示模式检查
+require_once 'demo_mode_check.php';
+check_demo_mode_post();
+
 try{
 $db->query("SELECT 1 FROM pages LIMIT 1");
 }catch(Exception $e){

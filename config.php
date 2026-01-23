@@ -49,6 +49,9 @@ define('DEFAULT_SITE_KEYWORDS', '菜谱,美食,烹饪,食谱,商用菜谱');
 define('DEFAULT_SITE_AUTHOR', '商用菜谱库');
 define('PER_PAGE', 12);
 
+// 演示模式（禁止提交和修改权限）
+define('DEMO_MODE', false);
+
 // 配置管理类
 class Config {
     private static $settings = [];

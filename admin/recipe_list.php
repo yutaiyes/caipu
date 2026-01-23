@@ -1,5 +1,12 @@
 <?php
 require'layout_header.php';
+
+// 演示模式检查
+if(isset($_GET['delete']) && is_demo_mode()){
+    header('Location: recipe_list.php?demo_error=1');
+    exit;
+}
+
 if(isset($_GET['delete'])){
 $id=(int)$_GET['delete'];
 $db->exec("DELETE FROM recipes WHERE id=$id");
@@ -12,6 +19,11 @@ $list=$db->query("SELECT r.*, c.name as category_name FROM recipes r
 LEFT JOIN categories c ON r.category_id=c.id
 $where ORDER BY r.id DESC")->fetchAll();
 ?>
+<?php if(isset($_GET['demo_error'])):?>
+<div class="alert alert-warning">
+<i class="fas fa-exclamation-triangle"></i> 演示模式下禁止此操作
+</div>
+<?php endif;?>
 <div class="page-header">
 <h3 class="mb-0"><i class="fas fa-utensils"></i> 菜谱列表</h3>
 </div>
@@ -28,9 +40,15 @@ placeholder="搜索菜谱..." value="<?=htmlspecialchars($search)?>">
 </form>
 </div>
 <div class="col-md-6 text-end">
+<?php if(is_demo_mode()):?>
+<button class="btn btn-success" disabled>
+<i class="fas fa-plus"></i> 新增菜谱 (演示模式)
+</button>
+<?php else:?>
 <a href="recipe_add.php" class="btn btn-success">
 <i class="fas fa-plus"></i> 新增菜谱
 </a>
+<?php endif;?>
 </div>
 </div>
 </div>

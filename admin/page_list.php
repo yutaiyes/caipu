@@ -28,6 +28,14 @@ $pages=$db->query("SELECT * FROM pages ORDER BY sort_order, id DESC")->fetchAll(
 require'layout_footer.php';
 exit;
 }
+
+// 演示模式检查
+require_once 'demo_mode_check.php';
+if(isset($_GET['delete']) && is_demo_mode()){
+    echo "<script>alert('演示模式下禁止此操作！');location.href='page_list.php';</script>";
+    exit;
+}
+
 if(isset($_GET['delete'])){
 $id=(int)$_GET['delete'];
 $db->exec("DELETE FROM pages WHERE id=$id");

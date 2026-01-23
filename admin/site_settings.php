@@ -22,6 +22,7 @@ $settings=[
 'show_total_visits'=>isset($_POST['show_total_visits'])?'1':'0',
 'environment_mode'=>$_POST['environment_mode']??'production',
 'compress_css'=>isset($_POST['compress_css'])?'1':'0',
+'demo_mode'=>isset($_POST['demo_mode'])?'1':'0',
 ];
 $stmt=$db->prepare("UPDATE settings SET value = ?, updated_at = CURRENT_TIMESTAMP WHERE key = ?");
 foreach($settings as $key=>$value){
@@ -37,6 +38,7 @@ if($key=='environment_mode') $desc='环境模式：production或development';
 if($key=='enable_readme_browse') $desc='是否启用readme目录浏览';
 if($key=='show_total_visits') $desc='是否在前台底部显示总访问量';
 if($key=='compress_css') $desc='是否压缩CSS文件为单行格式';
+if($key=='demo_mode') $desc='演示模式：禁止提交和修改权限';
 $insert=$db->prepare("INSERT INTO settings (key, value, description) VALUES (?, ?, ?)");
 $insert->execute([$key,$value,$desc]);
 }
@@ -235,6 +237,18 @@ id="enable_readme_browse" <?=($settings['enable_readme_browse']??'0')=='1'?'chec
 </div>
 <small class="form-text text-muted">
 开启后，访问 /readme/ 将显示文档列表页面；关闭后（默认），将重定向到后台文档中心
+</small>
+</div>
+<div class="mb-3">
+<div class="form-check form-switch">
+<input class="form-check-input" type="checkbox" name="demo_mode"
+id="demo_mode" <?=($settings['demo_mode']??'0')=='1'?'checked':''?>>
+<label class="form-check-label" for="demo_mode">
+<i class="fas fa-ban"></i> 演示模式
+</label>
+</div>
+<small class="form-text text-muted">
+开启后，将禁止所有提交和修改操作（添加、编辑、删除），用于演示目的
 </small>
 </div>
 <hr class="my-4">

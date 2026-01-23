@@ -145,4 +145,19 @@ if (!function_exists('minify_js')) {
         return implode("\n", $lines);
     }
 }
+
+// 检查演示模式
+if (!function_exists('is_demo_mode')) {
+    function is_demo_mode() {
+        // 从数据库读取演示模式设置
+        return Config::get('demo_mode', '0') === '1';
+    }
+}
+
+// 演示模式操作限制提示
+if (!function_exists('demo_mode_message')) {
+    function demo_mode_message() {
+        return '<div class="alert alert-warning"><i class="fas fa-exclamation-triangle"></i> 演示模式下禁止此操作</div>';
+    }
+}
 ?>

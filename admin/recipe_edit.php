@@ -1,5 +1,10 @@
 <?php
 require'layout_header.php';
+
+// 演示模式检查
+require_once 'demo_mode_check.php';
+check_demo_mode_post();
+
 $id=(int)$_GET['id'];
 $recipe=$db->query("SELECT * FROM recipes WHERE id=$id")->fetch();
 $cats=$db->query("SELECT * FROM categories")->fetchAll();
