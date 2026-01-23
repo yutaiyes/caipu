@@ -10,10 +10,17 @@ Thumbs.db
 *.tar.gz
 *.rar
 
+# Minified Assets
+*.min.css
+*.min.js
+
 # Runtime Data
 /data/*.db
 /data/*.log
 /backups/
+
+# Build Scripts
+build.php
 
 # Allow empty template database if you want to distribute it (optional)
 !/data/empty.db
