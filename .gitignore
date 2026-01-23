@@ -21,6 +21,7 @@ Thumbs.db
 
 # Build Scripts
 build.php
+build_demo.php
 
 # Allow empty template database if you want to distribute it (optional)
 !/data/empty.db
