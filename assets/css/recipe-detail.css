@@ -1,78 +1,466 @@
-:root{--primary-gradient:linear-gradient(135deg,#667eea 0%,#764ba2 100%)}html{height:100%}body{background:#f8f9fa;min-height:100vh;display:flex;flex-direction:column;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}.main-content{flex:1 0 auto}.footer{flex-shrink:0;margin-top:auto}.text-muted{color:#6c757d !important}.breadcrumb-section{background:linear-gradient(to right,#f8f9fa,#ffffff);padding:20px 0;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-bottom:1px solid #e9ecef}.breadcrumb{margin-bottom:0;background:transparent;padding:0;font-size:0.95rem}.breadcrumb-item{display:flex;align-items:center}.breadcrumb-item + .breadcrumb-item::before{content:"›";font-size:1.2rem;color:#6c757d;padding:0 10px}.breadcrumb-item a{color:#667eea;text-decoration:none;transition:all 0.3s;padding:5px 10px;border-radius:5px}.breadcrumb-item a:hover{color:#764ba2;background:rgba(102,126,234,0.1)}.breadcrumb-item a i{margin-right:5px}.breadcrumb-item.active{color:#495057;font-weight:500}.recipe-header{background:white;border-radius:15px;padding:40px;margin:30px 0;box-shadow:0 2px 15px rgba(0,0,0,0.08)}.recipe-title{font-size:2.5rem;font-weight:700;color:#2c3e50;margin-bottom:15px}.recipe-meta-bar{display:flex;flex-wrap:wrap;gap:20px;padding:20px 0;border-top:2px solid #e9ecef;border-bottom:2px solid #e9ecef;margin:20px 0}.meta-item{display:flex;align-items:center;gap:8px}.meta-item i{font-size:1.2rem;color:#667eea}.meta-label{font-size:0.9rem;color:#6c757d}.meta-value{font-size:1.1rem;font-weight:600;color:#2c3e50}.price-box{background:linear-gradient(135deg,#11998e 0%,#38ef7d 100%);color:white;padding:20px;border-radius:12px;text-align:center}.price-label{font-size:0.9rem;opacity:0.9;margin-bottom:5px}.price-value{font-size:2rem;font-weight:700}.recipe-content{background:white;border-radius:15px;padding:40px;box-shadow:0 2px 15px rgba(0,0,0,0.08);margin-bottom:30px}.markdown-body{max-width:100%;font-size:1rem;line-height:1.8}.markdown-body h1,.markdown-body h2{border-bottom:2px solid #667eea;padding-bottom:10px}.related-recipes{background:white;border-radius:15px;padding:30px;box-shadow:0 2px 15px rgba(0,0,0,0.08)}.related-recipe-card{border:1px solid #e9ecef;border-radius:10px;padding:15px;transition:all 0.3s;text-decoration:none;color:inherit;display:block;margin-bottom:15px}.related-recipe-card:hover{border-color:#667eea;transform:translateX(5px);box-shadow:0 4px 12px rgba(102,126,234,0.2)}.related-recipe-title{font-weight:600;color:#2c3e50;margin-bottom:5px}.related-recipe-price{color:#28a745;font-weight:600}.action-buttons{display:flex;gap:10px;margin-top:20px}.btn-back{background:#6c757d;color:white;border:none;padding:10px 25px;border-radius:25px;text-decoration:none;transition:all 0.3s}.btn-back:hover{background:#5a6268;color:white;transform:translateY(-2px)}.btn-print{background:var(--primary-gradient);color:white;border:none;padding:10px 25px;border-radius:25px;cursor:pointer;transition:all 0.3s}.btn-print:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(102,126,234,0.4)}@media (max-width:768px){.recipe-title{font-size:1.8rem}.recipe-header,.recipe-content{padding:20px}.recipe-meta-bar{flex-direction:column;gap:15px}}
-@media print {
-    body { 
-        background: white; 
-        color: black; 
+:root {
+    --primary-gradient:linear-gradient(135deg,#667eea 0%,#764ba2 100%)
+}
+html {
+    height:100%
+}
+body {
+    background:#f8f9fa;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif
+}
+.main-content {
+    flex:1 0 auto
+}
+.footer {
+    flex-shrink:0;
+    margin-top:auto
+}
+.text-muted {
+    color:#6c757d !important
+}
+.breadcrumb-section {
+    background:linear-gradient(to right,#f8f9fa,#ffffff);
+    padding:20px 0;
+    box-shadow:0 2px 8px rgba(0,0,0,0.05);
+    border-bottom:1px solid #e9ecef
+}
+.breadcrumb {
+    margin-bottom:0;
+    background:transparent;
+    padding:0;
+    font-size:0.95rem
+}
+.breadcrumb-item {
+    display:flex;
+    align-items:center
+}
+.breadcrumb-item + .breadcrumb-item::before {
+    content:"/";
+    font-size:1.2rem;
+    color:#6c757d;
+    padding:0 10px
+}
+.breadcrumb-item a {
+    color:#667eea;
+    text-decoration:none;
+    transition:all 0.3s;
+    padding:5px 10px;
+    border-radius:5px
+}
+.breadcrumb-item a:hover {
+    color:#764ba2;
+    background:rgba(102,126,234,0.1)
+}
+.breadcrumb-item a i {
+    margin-right:5px
+}
+.breadcrumb-item.active {
+    color:#495057;
+    font-weight:500
+}
+.recipe-header {
+    background:white;
+    border-radius:15px;
+    padding:40px;
+    margin:30px 0;
+    box-shadow:0 2px 15px rgba(0,0,0,0.08)
+}
+.recipe-title {
+    font-size:2.5rem;
+    font-weight:700;
+    color:#2c3e50;
+    margin-bottom:15px
+}
+.recipe-meta-bar {
+    display:flex;
+    flex-wrap:wrap;
+    gap:20px;
+    padding:20px 0;
+    border-top:2px solid #e9ecef;
+    border-bottom:2px solid #e9ecef;
+    margin:20px 0
+}
+.meta-item {
+    display:flex;
+    align-items:center;
+    gap:8px
+}
+.meta-item i {
+    font-size:1.2rem;
+    color:#667eea
+}
+.meta-label {
+    font-size:0.9rem;
+    color:#6c757d
+}
+.meta-value {
+    font-size:1.1rem;
+    font-weight:600;
+    color:#2c3e50
+}
+.price-box {
+    background:linear-gradient(135deg,#11998e 0%,#38ef7d 100%);
+    color:white;
+    padding:20px;
+    border-radius:12px;
+    text-align:center
+}
+.price-label {
+    font-size:0.9rem;
+    opacity:0.9;
+    margin-bottom:5px
+}
+.price-value {
+    font-size:2rem;
+    font-weight:700
+}
+.recipe-content {
+    background:white;
+    border-radius:15px;
+    padding:40px;
+    box-shadow:0 2px 15px rgba(0,0,0,0.08);
+    margin-bottom:30px
+}
+.markdown-body {
+    max-width:100%;
+    font-size:1rem;
+    line-height:1.8
+}
+.markdown-body h1,.markdown-body h2 {
+    border-bottom:2px solid #667eea;
+    padding-bottom:10px
+}
+.related-recipes {
+    background:white;
+    border-radius:15px;
+    padding:30px;
+    box-shadow:0 2px 15px rgba(0,0,0,0.08)
+}
+.related-recipe-card {
+    border:1px solid #e9ecef;
+    border-radius:10px;
+    padding:15px;
+    transition:all 0.3s;
+    text-decoration:none;
+    color:inherit;
+    display:block;
+    margin-bottom:15px
+}
+.related-recipe-card:hover {
+    border-color:#667eea;
+    transform:translateX(5px);
+    box-shadow:0 4px 12px rgba(102,126,234,0.2)
+}
+.related-recipe-title {
+    font-weight:600;
+    color:#2c3e50;
+    margin-bottom:5px
+}
+.related-recipe-price {
+    color:#28a745;
+    font-weight:600
+}
+.action-buttons {
+    display:flex;
+    gap:10px;
+    margin-top:20px
+}
+.btn-back {
+    background:#6c757d;
+    color:white;
+    border:none;
+    padding:10px 25px;
+    border-radius:25px;
+    text-decoration:none;
+    transition:all 0.3s
+}
+.btn-back:hover {
+    background:#5a6268;
+    color:white;
+    transform:translateY(-2px)
+}
+.btn-print {
+    background:var(--primary-gradient);
+    color:white;
+    border:none;
+    padding:10px 25px;
+    border-radius:25px;
+    cursor:pointer;
+    transition:all 0.3s
+}
+.btn-print:hover {
+    transform:translateY(-2px);
+    box-shadow:0 4px 12px rgba(102,126,234,0.4)
+}
+@media (max-width:768px) {
+    .recipe-title {
+    font-size:1.8rem
+}
+.recipe-header,.recipe-content {
+    padding:20px
+}
+.recipe-meta-bar {
+    flex-direction:column;
+    gap:15px
+}
+
+}
+
+@media print  {
+    
+    body  {
+     
+        background: white;
+     
+        color: black;
+     
         width: 100%;
+    
         height: 100%;
+    
         margin: 0;
+    
         padding: 0;
-        /* 移除强制缩放，改用 flex/column 自适应 */
-    }
     
-    /* 隐藏无关元素 */
-    .navbar, .breadcrumb-section, .action-buttons, .action-buttons-bottom, .related-recipes, .footer, .col-lg-3, .price-box, .btn-print, .btn-back, .lead, .recipe-header { display: none !important; }
+        /* 绉婚櫎寮哄埗缂╂斁锛屾敼鐢?flex/column 鑷€傚簲 */
     
-    /* 重置容器宽度 */
-    .container { width: 100% !important; max-width: none !important; padding: 0 !important; margin: 0 !important; }
-    .row { display: block !important; margin: 0 !important; }
-    .col-lg-9 { width: 100% !important; flex: 0 0 100% !important; max-width: 100% !important; padding: 0 !important; }
+}
+
     
-    /* 内容区域 */
-    .recipe-content { 
-        box-shadow: none !important; 
-        padding: 0 !important; 
-        margin: 0 !important; 
-        border: none !important; 
-    }
+    /* 闅愯棌鏃犲叧鍏冪礌 */
+    .navbar, .breadcrumb-section, .action-buttons, .action-buttons-bottom, .related-recipes, .footer, .col-lg-3, .price-box, .btn-print, .btn-back, .lead, .recipe-header  {
+     display: none !important;
+     
+}
+
     
-    /* Markdown 正文通用设置 */
-    .markdown-body { 
-        line-height: 1.3 !important; 
-        color: black !important; 
+    /* 閲嶇疆瀹瑰櫒瀹藉害 */
+    .container  {
+     width: 100% !important;
+     max-width: none !important;
+     padding: 0 !important;
+     margin: 0 !important;
+     
+}
+
+    .row  {
+     display: block !important;
+     margin: 0 !important;
+     
+}
+
+    .col-lg-9  {
+     width: 100% !important;
+     flex: 0 0 100% !important;
+     max-width: 100% !important;
+     padding: 0 !important;
+     
+}
+
+    
+    /* 鍐呭鍖哄煙 */
+    .recipe-content  {
+     
+        box-shadow: none !important;
+     
+        padding: 0 !important;
+     
+        margin: 0 !important;
+     
+        border: none !important;
+     
+    
+}
+
+    
+    /* Markdown 姝ｆ枃閫氱敤璁剧疆 */
+    .markdown-body  {
+     
+        line-height: 1.3 !important;
+     
+        color: black !important;
+     
         text-align: justify;
-        column-gap: 20px;
-        column-rule: 1px solid #eee;
-    }
-    .markdown-body h1 { margin-top: 5px !important; margin-bottom: 3px !important; padding-bottom: 2px !important; break-after: avoid; border-bottom: 1px solid #ccc; }
-    .markdown-body h2 { margin-top: 5px !important; margin-bottom: 2px !important; padding-bottom: 2px !important; break-after: avoid; font-weight: bold; }
-    .markdown-body h3 { margin-top: 4px !important; margin-bottom: 2px !important; break-after: avoid; }
-    .markdown-body p { margin-bottom: 5px !important; orphans: 2; widows: 2; text-indent: 0; }
-    .markdown-body ul, .markdown-body ol { margin-bottom: 5px !important; padding-left: 18px !important; }
-    .markdown-body li { margin-bottom: 1px !important; }
-    .markdown-body img { max-width: 100% !important; height: auto !important; float: none !important; margin: 5px auto !important; display: block; break-inside: avoid; }
-    .markdown-body blockquote { margin: 5px 0 !important; padding: 0 10px !important; color: #666 !important; border-left: 2px solid #ddd !important; font-style: italic; }
     
-    /* 避免分页断开 */
-    h1, h2, h3, h4, h5, h6 { page-break-after: avoid; break-after: avoid; }
-    img, table, blockquote, pre { page-break-inside: avoid; break-inside: avoid; }
-    a { text-decoration: none !important; color: black !important; }
+        column-gap: 20px;
+    
+        column-rule: 1px solid #eee;
+    
+    
 }
 
-/* 纵向打印 (Portrait) - 双列布局 */
-@media print and (orientation: portrait) {
-    @page { size: A4 portrait; margin: 0.5cm; }
-    .markdown-body { 
-        font-size: 9pt !important; 
-        column-count: 2; 
-    }
-    .markdown-body h1 { font-size: 12pt !important; }
-    .markdown-body h2 { font-size: 11pt !important; }
-    .markdown-body h3 { font-size: 10pt !important; }
-    /* 纵向空间有限，图片限制高度 */
-    .markdown-body img { max-height: 150px !important; }
+    .markdown-body h1  {
+     margin-top: 5px !important;
+     margin-bottom: 3px !important;
+     padding-bottom: 2px !important;
+     break-after: avoid;
+     border-bottom: 1px solid #ccc;
+     
 }
 
-/* 横向打印 (Landscape) - 三列布局 */
-@media print and (orientation: landscape) {
-    @page { size: A4 landscape; margin: 0.5cm; }
-    .markdown-body { 
-        font-size: 10pt !important; /* 横向空间大，字号稍大 */
-        column-count: 3; 
-    }
-    .markdown-body h1 { font-size: 13pt !important; }
-    .markdown-body h2 { font-size: 12pt !important; }
-    .markdown-body h3 { font-size: 11pt !important; }
-    /* 横向列宽较窄，图片限制高度以防比例失调 */
-    .markdown-body img { max-height: 120px !important; }
+    .markdown-body h2  {
+     margin-top: 5px !important;
+     margin-bottom: 2px !important;
+     padding-bottom: 2px !important;
+     break-after: avoid;
+     font-weight: bold;
+     
 }
+
+    .markdown-body h3  {
+     margin-top: 4px !important;
+     margin-bottom: 2px !important;
+     break-after: avoid;
+     
+}
+
+    .markdown-body p  {
+     margin-bottom: 5px !important;
+     orphans: 2;
+     widows: 2;
+     text-indent: 0;
+     
+}
+
+    .markdown-body ul, .markdown-body ol  {
+     margin-bottom: 5px !important;
+     padding-left: 18px !important;
+     
+}
+
+    .markdown-body li  {
+     margin-bottom: 1px !important;
+     
+}
+
+    .markdown-body img  {
+     max-width: 100% !important;
+     height: auto !important;
+     float: none !important;
+     margin: 5px auto !important;
+     display: block;
+     break-inside: avoid;
+     
+}
+
+    .markdown-body blockquote  {
+     margin: 5px 0 !important;
+     padding: 0 10px !important;
+     color: #666 !important;
+     border-left: 2px solid #ddd !important;
+     font-style: italic;
+     
+}
+
+    
+    /* 閬垮厤鍒嗛〉鏂紑 */
+    h1, h2, h3, h4, h5, h6  {
+     page-break-after: avoid;
+     break-after: avoid;
+     
+}
+
+    img, table, blockquote, pre  {
+     page-break-inside: avoid;
+     break-inside: avoid;
+     
+}
+
+    a  {
+     text-decoration: none !important;
+     color: black !important;
+     
+}
+
+
+}
+
+
+/* 绾靛悜鎵撳嵃 (Portrait) - 鍙屽垪甯冨眬 */
+@media print and (orientation: portrait)  {
+    
+    @page  {
+     size: A4 portrait;
+     margin: 0.5cm;
+     
+}
+
+    .markdown-body  {
+     
+        font-size: 9pt !important;
+     
+        column-count: 2;
+     
+    
+}
+
+    .markdown-body h1  {
+     font-size: 12pt !important;
+     
+}
+
+    .markdown-body h2  {
+     font-size: 11pt !important;
+     
+}
+
+    .markdown-body h3  {
+     font-size: 10pt !important;
+     
+}
+
+    /* 绾靛悜绌洪棿鏈夐檺锛屽浘鐗囬檺鍒堕珮搴?*/
+    .markdown-body img  {
+     max-height: 150px !important;
+     
+}
+
+
+}
+
+
+/* 妯悜鎵撳嵃 (Landscape) - 涓夊垪甯冨眬 */
+@media print and (orientation: landscape)  {
+    
+    @page  {
+     size: A4 landscape;
+     margin: 0.5cm;
+     
+}
+
+    .markdown-body  {
+     
+        font-size: 10pt !important;
+     /* 妯悜绌洪棿澶э紝瀛楀彿绋嶅ぇ */
+        column-count: 3;
+     
+    
+}
+
+    .markdown-body h1  {
+     font-size: 13pt !important;
+     
+}
+
+    .markdown-body h2  {
+     font-size: 12pt !important;
+     
+}
+
+    .markdown-body h3  {
+     font-size: 11pt !important;
+     
+}
+
+    /* 妯悜鍒楀杈冪獎锛屽浘鐗囬檺鍒堕珮搴︿互闃叉瘮渚嬪け璋?*/
+    .markdown-body img  {
+     max-height: 120px !important;
+     
+}
+
+
+}
+
