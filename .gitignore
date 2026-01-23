@@ -15,6 +15,9 @@ Thumbs.db
 /data/*.log
 /backups/
 
+# Build Scripts
+build.php
+
 # Allow empty template database if you want to distribute it (optional)
 !/data/empty.db
 
