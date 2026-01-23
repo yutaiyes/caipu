@@ -1,7 +1,7 @@
 <?php
 // build.php - 打包发布脚本
 
-$version = '1.0.0';
+$version = '1.0.1';
 $outputZip = __DIR__ . "/Caipu_v{$version}.zip";
 
 // 如果存在旧包，先删除
@@ -18,17 +18,17 @@ echo "正在打包 Caipu v{$version}...\n";
 
 // 需要排除的文件和目录（相对于根目录）
 $excludePatterns = [
-    '/\.git/',        // git目录
-    '/\.idea/',       // IDE配置
-    '/\.vscode/',     // IDE配置
-    '/data\/data\.db/', // 运行时的数据库
-    '/data\/.*\.log/', // 日志文件
-    '/build\.php/',   // 本脚本
-    '/\.zip$/',       // 压缩包
-    '/test.*/',       // 测试文件
-    '/backups/',      // 备份目录
-    '/admin\/\.htaccess/', // 管理后台的伪静态文件
-    '/uploads\/.*(?<!\.gitkeep)$/', // 上传目录中的所有文件（保留.gitkeep）
+    '/^\.git/',        // git目录和文件 (.git, .gitignore, .github 等)
+    '/^\.github/',     // .github 目录
+    '/^data\//',       // data 目录
+    '/^backups\//',    // backups 目录
+    '/^uploads\//',    // uploads 目录
+    '/\.zip$/i',       // zip 文件
+    '/^[^ \/\\\\]+\.md$/i', // 根目录下的 .md 文件 (不包含子目录中的 md)
+    '/build\.php/',    // 本脚本
+    '/\.idea/',        // IDE配置
+    '/\.vscode/',      // IDE配置
+    '/test.*/',        // 测试文件
 ];
 
 // 必须包含的重要文件（即使被上面的规则排除，这里作为白名单检查，其实主要靠遍历逻辑控制）
@@ -52,19 +52,30 @@ foreach ($files as $name => $file) {
     // 检查排除规则
     $exclude = false;
     foreach ($excludePatterns as $pattern) {
-        if (preg_match($pattern, '/' . $relativePath)) { // 加前导斜杠以匹配路径开头
-            $exclude = true;
-            // 特殊处理：如果是 data/empty.db，不能排除
-            if (strpos($relativePath, 'data/empty.db') !== false) {
-                $exclude = false;
-            }
-            // 特殊处理：保留 uploads 目录结构 (.gitkeep)
-            if (strpos($relativePath, 'uploads/') === 0 && strpos($relativePath, '.gitkeep') !== false) {
-                $exclude = false;
-            }
-            break;
+        // 使用正则匹配
+        // 注意：$relativePath 可能是 "index.php" 或 "admin/index.php"
+        // 对于根目录文件，我们需要确保正则能正确匹配
+        
+        // 针对根目录文件的特殊处理 (例如 /^[^ \/\\\\]+\.md$/i)
+        if ($pattern[1] === '^') {
+             // 如果正则以 ^ 开头，直接匹配相对路径
+             if (preg_match($pattern, $relativePath)) {
+                 $exclude = true;
+                 break;
+             }
+        } else {
+             // 否则匹配路径中的任意部分 (为了兼容旧逻辑，还是建议加上 / 前缀或者调整正则)
+             // 原有逻辑是 preg_match($pattern, '/' . $relativePath)
+             if (preg_match($pattern, '/' . $relativePath)) {
+                 $exclude = true;
+                 break;
+             }
         }
     }
+    
+    // 再次确认：如果排除的是 uploads 或 data，是否需要保留目录结构？
+    // 用户明确要求忽略，所以这里不保留 data/empty.db 或 uploads/.gitkeep
+    // 除非用户指令有误，否则严格执行。
 
     if ($exclude) {
         // echo "跳过: $relativePath\n";
