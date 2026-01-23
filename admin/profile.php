@@ -26,15 +26,28 @@ $_SESSION['profile_error']='新密码长度不能少于6位！';
 }elseif($new_pwd!==$confirm_pwd){
 $_SESSION['profile_error']='两次输入的新密码不一致！';
 }else{
-$new_hash=password_hash($new_pwd,PASSWORD_DEFAULT);
-$stmt=$db->prepare("UPDATE admin SET password = ? WHERE username = ?");
-if($stmt->execute([$new_hash,$_SESSION['admin']])){
-$_SESSION['profile_message']='密码修改成功！请重新登录。';
-unset($_SESSION['admin']);
-header('Location: login.php');
-exit;
-}else{
-$_SESSION['profile_error']='密码修改失败，请重试！';
+try {
+    // 检查数据库目录是否有写权限（SQLite需要目录写权限来创建日志文件）
+    $db_dir = dirname(DB_PATH);
+    if (!is_writable($db_dir)) {
+        throw new Exception("数据库目录 ({$db_dir}) 不可写，请检查服务器权限！");
+    }
+    if (!is_writable(DB_PATH)) {
+        throw new Exception("数据库文件 (" . DB_PATH . ") 不可写，请检查服务器权限！");
+    }
+
+    $new_hash = password_hash($new_pwd, PASSWORD_DEFAULT);
+    $stmt = $db->prepare("UPDATE admin SET password = ? WHERE username = ?");
+    if ($stmt->execute([$new_hash, $_SESSION['admin']])) {
+        $_SESSION['profile_message'] = '密码修改成功！请重新登录。';
+        unset($_SESSION['admin']);
+        header('Location: login.php');
+        exit;
+    } else {
+        $_SESSION['profile_error'] = '密码修改失败，请重试！';
+    }
+} catch (Exception $e) {
+    $_SESSION['profile_error'] = '系统错误：' . $e->getMessage();
 }
 }
 }

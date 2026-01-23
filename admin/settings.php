@@ -71,14 +71,14 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 # 菜谱详情页: 12位编码.html -> recipe.php?base=编码
 # 注意：菜谱编码不以A开头，避免与页面冲突
-RewriteRule ^([B-Z][A-Z0-9]{11})\.html$ recipe.php?base=$1 [L,QSA]
+RewriteRule ^([0-9B-Zb-z][a-zA-Z0-9]{11})\.html$ recipe.php?base=$1 [L,QSA]
 # 兼容旧格式: /recipe/数字ID.html -> recipe.php?id=数字ID
 RewriteRule ^recipe/([0-9]+)\.html$ recipe.php?id=$1 [L,QSA]
 # 分类页面: /category/数字ID.html -> index.php?cat=数字ID
 RewriteRule ^category/([0-9]+)\.html$ index.php?cat=$1 [L,QSA]
 # 自定义页面: 12位编码.html -> page.php?base=编码
 # 注意：页面编码以A开头，与菜谱区分
-RewriteRule ^([A][A-Z0-9]{11})\.html$ page.php?base=$1 [L,QSA]
+RewriteRule ^([Aa][a-zA-Z0-9]{11})\.html$ page.php?base=$1 [L,QSA]
 # 兼容旧格式: /page/标识.html -> page.php?slug=标识
 RewriteRule ^page/([a-zA-Z0-9_-]+)\.html$ page.php?slug=$1 [L,QSA]
 # 首页: /index.html -> index.php
@@ -124,7 +124,8 @@ echo '<div><i class="fas fa-exclamation-circle"></i> '.htmlspecialchars($msg).'<
 echo '<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
 }
 if(!empty($success_messages)&&!isset($_POST['admin_dir'])){
-echo "<script>setTimeout(function(){ location.reload(); }, 2000);</script>";
+    // 不再自动刷新，避免用户困惑
+    // echo "<script>setTimeout(function(){ location.reload(); }, 2000);</script>";
 }
 }
 $current_admin_dir=defined('ADMIN_DIR')?ADMIN_DIR:'admin';
@@ -376,22 +377,39 @@ RewriteRule ^([A][A-Z0-9]{11})\.html$ page.php?base=$1 [L,QSA]
 RewriteRule ^page/([a-zA-Z0-9_-]+)\.html$ page.php?slug=$1 [L,QSA]
 # 首页
 RewriteRule ^index\.html$ index.php [L,QSA]</code></pre>
-<p class="mb-2"><strong>Nginx规则（如果使用Nginx）：</strong></p>
-<pre class="mb-0"><code>location / {
-try_files $uri $uri/ @rewrite;
+<div class="d-flex justify-content-between align-items-center mb-2 mt-3">
+    <strong>Nginx规则（如果使用Nginx）：</strong>
+    <button type="button" class="btn btn-sm btn-outline-primary" onclick="copyNginxRules()">
+        <i class="fas fa-copy"></i> 一键复制规则
+    </button>
+</div>
+<pre class="bg-dark text-white p-3 rounded" id="nginx-rules-code">location / {
+    if (!-e $request_filename){
+        rewrite "^/([0-9B-Zb-z][a-zA-Z0-9]{11})\.html$" /recipe.php?base=$1 last;
+        rewrite ^/recipe/([0-9]+)\.html$ /recipe.php?id=$1 last;
+        rewrite ^/category/([0-9]+)\.html$ /index.php?cat=$1 last;
+        rewrite "^/([Aa][a-zA-Z0-9]{11})\.html$" /page.php?base=$1 last;
+        rewrite ^/page/([a-zA-Z0-9_-]+)\.html$ /page.php?slug=$1 last;
+        rewrite ^/index\.html$ /index.php last;
+    }
+}</pre>
+<script>
+function copyNginxRules() {
+    const rules = document.getElementById('nginx-rules-code').innerText;
+    navigator.clipboard.writeText(rules).then(() => {
+        alert('Nginx规则已复制到剪贴板！');
+    }).catch(err => {
+        // 兼容旧浏览器
+        const textarea = document.createElement('textarea');
+        textarea.value = rules;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        alert('Nginx规则已复制到剪贴板！');
+    });
 }
-location @rewrite {
-# 菜谱详情页: 12位编码（不以A开头）
-rewrite ^/([B-Z][A-Z0-9]{11})\.html$ /recipe.php?base=$1 last;
-# 兼容旧格式
-rewrite ^/recipe/([0-9]+)\.html$ /recipe.php?id=$1 last;
-rewrite ^/category/([0-9]+)\.html$ /index.php?cat=$1 last;
-# 自定义页面: 12位编码（以A开头）
-rewrite ^/([A][A-Z0-9]{11})\.html$ /page.php?base=$1 last;
-# 兼容旧格式
-rewrite ^/page/([a-zA-Z0-9_-]+)\.html$ /page.php?slug=$1 last;
-rewrite ^/index\.html$ /index.php last;
-}</code></pre>
+</script>
 <p class="small text-muted mt-2 mb-0">
 <i class="fas fa-lightbulb"></i> 提示：宝塔面板会自动处理配置，无需手动重启服务器
 </p>
@@ -447,16 +465,8 @@ Nginx服务器如何配置？
 </h2>
 <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
 <div class="accordion-body">
-<p>Nginx不支持.htaccess文件，需要在nginx配置文件中添加rewrite规则：</p>
-<pre><code>location / {
-try_files $uri $uri/ @rewrite;
-}
-location @rewrite {
-rewrite ^/recipe/([0-9]+)\.html$ /recipe.php?id=$1 last;
-rewrite ^/category/([0-9]+)\.html$ /index.php?cat=$1 last;
-rewrite ^/page/([a-zA-Z0-9_-]+)\.html$ /page.php?slug=$1 last;
-rewrite ^/index\.html$ /index.php last;
-}</code></pre>
+<p>请直接使用页面上方的“一键复制规则”按钮获取最新规则。</p>
+<p>Nginx不支持.htaccess文件，需要在nginx配置文件中添加rewrite规则。</p>
 <p class="mb-0">修改后重启Nginx: <code>sudo systemctl restart nginx</code></p>
 </div>
 </div>

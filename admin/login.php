@@ -2,6 +2,10 @@
 session_start();
 define('ADMIN_ACCESS',true);
 require_once'security.php';
+
+// 先引入 config.php，确保函数可用
+require_once '../config.php';
+
 $db=new PDO('sqlite:../data/data.db');
 $error='';
 $message='';
@@ -43,9 +47,13 @@ $error.="（还有 {$remaining} 次尝试机会）";
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>后台登录 - 商用菜谱管理系统</title>
+<?php
+$use_min = (getSiteSetting('compress_css') === '1');
+$css_ext = $use_min ? '.min.css' : '.css';
+?>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="../assets/css/login.css">
+<link rel="stylesheet" href="../assets/css/login<?=$css_ext?>">
 </head>
 <body>
 <div class="login-card">

@@ -20,8 +20,17 @@
                     <li><a href="<?= isset($base_path) ? $base_path : '' ?>"><i class="fas fa-home"></i> 首页</a></li>
                 <?php if (!empty($pages)): ?>
                 <?php foreach ($pages as $footer_page): ?>
+                <?php
+                    // 生成页面URL
+                    if (Config::get('rewrite_enabled') === '1') {
+                        $page_url = encode_id($footer_page['id'], 'page') . '.html';
+                    } else {
+                        $page_url = 'page.php?base=' . encode_id($footer_page['id'], 'page');
+                    }
+                    $page_url = (isset($base_path) ? $base_path : '') . $page_url;
+                ?>
                 <li>
-                    <a href="<?= isset($base_path) ? $base_path : '' ?>page.php?slug=<?= htmlspecialchars($footer_page['slug']) ?>">
+                    <a href="<?= $page_url ?>">
                         <i class="fas fa-file-alt"></i> <?= htmlspecialchars($footer_page['title']) ?>
                     </a>
                 </li>
@@ -45,6 +54,9 @@
                     <?php endif; ?>
                     <?php if ($geo_placename): ?>
                     <li><i class="fas fa-map-marker-alt"></i> 服务地区：<?= htmlspecialchars($geo_placename) ?></li>
+                    <?php endif; ?>
+                    <?php if (Config::get('show_total_visits') === '1'): ?>
+                    <li><i class="fas fa-users"></i> 总访问量：<?= number_format(get_total_visits()) ?> 次</li>
                     <?php endif; ?>
                 </ul>
             </div>

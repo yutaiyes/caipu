@@ -13,37 +13,44 @@ if (!function_exists('encode_id')) {
         $pad_length = 10 - strlen($base36);
 
         if ($type === 'page') {
-            $prefix = 'A' . substr(md5($id . 'page'), 0, 1);
+            // 页面编码：必须以A开头，第二位大写
+            $prefix = 'A' . strtoupper(substr(md5($id . 'page'), 0, 1));
         } else {
+            // 菜谱编码：不能以A开头
             $hash = strtoupper(md5($id . 'recipe'));
             $p1 = $hash[0];
             $p2 = $hash[1];
-            if ($p1 === 'A') $p1 = 'B';
+            if ($p1 === 'A') {
+                $p1 = 'B';
+            }
+            // 第二位保持大写（避免混淆）
             $prefix = $p1 . $p2;
         }
 
-        $encoded = $prefix . str_pad($base36, $pad_length + strlen($base36), '0', STR_PAD_LEFT);
-        $hash = md5($id . $type . $encoded);
-        $hash_len = strlen($hash);
-        $chars = str_split($encoded);
-        foreach ($chars as $i => $char) {
-            if (ctype_alpha($char)) {
-                $hex = $hash[$i % $hash_len];
-                if ((hexdec($hex) % 2) === 0) {
-                    $chars[$i] = strtolower($char);
-                } else {
-                    $chars[$i] = strtoupper($char);
-                }
-            }
-        }
-        return implode('', $chars);
+        // 有效36进制部分保持大写（用于解码）
+        $valid_part = strtoupper($base36);
+        $padded = str_pad('', $pad_length, '0');
+
+        return $prefix . $padded . $valid_part;
     }
 }
 
 // 解码函数
 if (!function_exists('decode_id')) {
     function decode_id($encoded) {
-        $base36 = substr(strtolower($encoded), 2);
+        // 移除前2位前缀
+        $body = substr($encoded, 2);
+        // 提取有效的36进制字符（数字和大写字母）
+        $cleaned = '';
+        for ($i = 0; $i < strlen($body); $i++) {
+            $char = $body[$i];
+            // 只保留数字和大写字母（有效36进制字符）
+            if (is_numeric($char) || (ctype_upper($char))) {
+                $cleaned .= $char;
+            }
+        }
+        // 转为小写进行解码
+        $base36 = strtolower($cleaned);
         $base36 = ltrim($base36, '0');
         // 如果为空，返回0
         if (empty($base36)) {
@@ -51,6 +58,91 @@ if (!function_exists('decode_id')) {
         }
         // 转换回10进制
         return base_convert($base36, 36, 10);
+    }
+}
+
+// 记录访问日志（已禁用以提升性能）
+if (!function_exists('record_visit')) {
+    function record_visit() {
+        // 暂时禁用访问记录，避免数据库操作导致页面加载缓慢
+        // 如需启用，请取消下方注释
+        return;
+
+        /*
+        try {
+            if (!file_exists(DB_PATH)) return;
+            $db = new PDO('sqlite:' . DB_PATH);
+            $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+            $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+            $user_agent = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
+            $request_uri = $_SERVER['REQUEST_URI'] ?? '/';
+
+            // 记录日志
+            $stmt = $db->prepare("INSERT INTO visit_logs (ip, user_agent, request_uri) VALUES (?, ?, ?)");
+            $stmt->execute([$ip, $user_agent, $request_uri]);
+        } catch (Exception $e) {
+            // 忽略错误，以免影响主流程
+        }
+        */
+    }
+}
+
+// 获取总访问量（已优化）
+if (!function_exists('get_total_visits')) {
+    function get_total_visits() {
+        // 直接返回0，避免COUNT查询导致页面加载缓慢
+        return 0;
+
+        /*
+        try {
+            if (!file_exists(DB_PATH)) return 0;
+            $db = new PDO('sqlite:' . DB_PATH);
+            // 尝试从settings获取缓存值
+            $count = $db->query("SELECT value FROM settings WHERE key = 'cached_total_visits'")->fetchColumn();
+            if ($count !== false) {
+                return (int)$count;
+            }
+            // 如果没有缓存，执行COUNT查询（数据量大时会很慢）
+            $count = $db->query("SELECT COUNT(*) FROM visit_logs")->fetchColumn();
+            return $count ? (int)$count : 0;
+        } catch (Exception $e) {
+            return 0;
+        }
+        */
+    }
+}
+
+// CSS 压缩函数（安全版，保留Unicode字符）
+if (!function_exists('minify_css')) {
+    function minify_css($css) {
+        // 移除多行注释
+        $css = preg_replace('!/\*[^*]*\*+([^/][^*]*\*+)*/!', '', $css);
+        // 保留 content 属性中的引号内容（避免破坏特殊字符）
+        $css = preg_replace_callback('/content\s*:\s*([\'"])(.*?)\1/s', function($matches) {
+            return 'content:' . $matches[1] . $matches[2] . $matches[1];
+        }, $css);
+        // 移除换行、制表符
+        $css = str_replace(["\r\n", "\r", "\n", "\t"], '', $css);
+        // 多个空格转一个（但在content值内不压缩）
+        $css = preg_replace('/\s+/', ' ', $css);
+        // 移除符号周围空格（但不在引号内）
+        $css = preg_replace('/\s*([\{\}:;,])\s*/', '$1', $css);
+        return trim($css);
+    }
+}
+
+// JS 压缩函数（安全版）
+if (!function_exists('minify_js')) {
+    function minify_js($js) {
+        // 1. 移除多行注释
+        $js = preg_replace('!/\*[^*]*\*+([^/][^*]*\*+)*/!', '', $js);
+        // 2. 移除空行，去除首尾空格
+        $lines = explode("\n", $js);
+        $lines = array_map('trim', $lines);
+        $lines = array_filter($lines, function($line) { return $line !== ''; });
+        // 3. 重新组合
+        return implode("\n", $lines);
     }
 }
 ?>

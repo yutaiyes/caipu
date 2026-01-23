@@ -6,16 +6,18 @@
 
 session_start();
 require'layout_header.php';
+require_once '../includes/functions.php';
 
 // 定义要压缩的文件（支持CSS、JS、PHP）
+$base_dir = dirname(__DIR__);
 $compress_files = [
     // CSS文件
-    ['path' => '../assets/css/frontend.css', 'type' => 'css'],
-    ['path' => '../assets/css/admin.css', 'type' => 'css'],
-    ['path' => '../assets/css/login.css', 'type' => 'css'],
-    ['path' => '../assets/css/recipe-detail.css', 'type' => 'css'],
+    ['path' => $base_dir . '/assets/css/frontend.css', 'type' => 'css'],
+    ['path' => $base_dir . '/assets/css/admin.css', 'type' => 'css'],
+    ['path' => $base_dir . '/assets/css/login.css', 'type' => 'css'],
+    ['path' => $base_dir . '/assets/css/recipe-detail.css', 'type' => 'css'],
     // JS文件
-    ['path' => '../assets/js/main.js', 'type' => 'js'],
+    ['path' => $base_dir . '/assets/js/main.js', 'type' => 'js'],
 ];
 
 $success_count = 0;
@@ -38,41 +40,21 @@ $compressed = $content;
 
 // 根据文件类型进行压缩
 if($type === 'css'){
-    // 压缩CSS：移除注释、换行、多余空格
-    $compressed = preg_replace(
-        [
-            '/\/\*[\s\S]*?\*\//', // 移除多行注释
-            '/\/\*.*?\*\//',     // 移除单行注释
-            '/\s+/',             // 多个空格替换为一个空格
-            '/\s*([{}:;,])\s*/', // 移除符号周围空格
-            '/;}/'                // 移除最后一个分号前的多余字符
-        ],
-        ['', '', ' ', '$1', '}'],
-        $content
-    );
+    $compressed = minify_css($content);
 }elseif($type === 'js'){
-    // 压缩JS：移除注释、换行
-    $compressed = preg_replace(
-        [
-            '/\/\*[\s\S]*?\*\//', // 移除多行注释
-            '/\/\/.*/',            // 移除单行注释
-            '/\s+/',               // 多个空格替换为一个空格
-            '/\s*([{}();,:=<>])\s*/', // 移除符号周围空格
-        ],
-        ['', '', ' ', '$1'],
-        $content
-    );
+    $compressed = minify_js($content);
 }
 
 $compressed_size = strlen($compressed);
 
 // 保存压缩后的内容
-if(file_put_contents($file, $compressed)){
+$min_file = str_replace('.' . $type, '.min.' . $type, $file);
+if(file_put_contents($min_file, $compressed)){
     $compression_ratio = round((1 - $compressed_size / $original_size) * 100, 2);
     $success_count++;
-    $success_messages[] = basename($file)." ($type): 原始 $original_size 字节 → 压缩 $compressed_size 字节 (减少 $compression_ratio%)";
+    $success_messages[] = basename($min_file)." ($type): 原始 $original_size 字节 → 压缩 $compressed_size 字节 (减少 $compression_ratio%)";
 }else{
-    $error_messages[] = "无法写入文件: $file";
+    $error_messages[] = "无法写入文件: $min_file";
 }
 }catch(Exception $e){
 $error_messages[] = "压缩 " . basename($file) . " 时出错: " . $e->getMessage();
@@ -164,9 +146,9 @@ $size = $exists ? filesize($file) : 0;
 <div class="alert alert-warning">
 <h6><i class="fas fa-exclamation-triangle"></i> 注意事项</h6>
 <ul class="mb-0">
-<li>压缩后的文件将覆盖原文件，不可逆</li>
+<li>压缩后的文件将保存为 .min 格式，不会覆盖原文件</li>
 <li>压缩后代码将变为单行格式，不易阅读</li>
-<li>建议在版本控制中保留未压缩的备份</li>
+<li>建议在生产环境使用压缩后的文件</li>
 <li>压缩不会影响代码的功能和运行效果</li>
 </ul>
 </div>

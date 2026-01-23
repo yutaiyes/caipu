@@ -5,18 +5,9 @@ require_once '../config.php';
 // 生成前端HTTP基础URL（用于后台预览）
 $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
 $host = $_SERVER['HTTP_HOST'];
-$script_path = dirname($_SERVER['PHP_SELF']);
-// 从admin目录返回到根目录
-$base_path = str_replace('/admin', '', $script_path);
-// 去除首尾斜杠
-$base_path = trim($base_path, '/');
-// 构建完整的基础URL
-if ($base_path === '') {
-    $base_http_url = $protocol . '://' . $host . '/';
-} else {
-    $base_http_url = $protocol . '://' . $host . '/' . $base_path . '/';
-}
-define('FRONTEND_BASE_URL', $base_http_url);
+
+// 使用 config.php 中计算的 BASE_URI，它已经自动处理了目录更名的情况
+define('FRONTEND_BASE_URL', $protocol . '://' . $host . BASE_URI);
 
 if(session_status()===PHP_SESSION_NONE){
 session_start();
@@ -32,6 +23,10 @@ exit;
 // 设置管理员登录状态，供前端检测
 $_SESSION['admin_logged_in'] = true;
 $db=new PDO('sqlite:../data/data.db');
+
+// 获取 compress_css 设置（使用 Config::get 而不是直接查询数据库）
+$compress_css_setting = Config::get('compress_css', '0');
+
 $current_page=basename($_SERVER['PHP_SELF']);
 ?>
 <!doctype html>
@@ -40,9 +35,16 @@ $current_page=basename($_SERVER['PHP_SELF']);
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>商用菜谱管理后台</title>
+<?php
+$use_min = ($compress_css_setting === '1');
+$css_ext = $use_min ? '.min.css' : '.css';
+?>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="../assets/css/admin.css">
+<link rel="stylesheet" href="../assets/css/admin<?= $css_ext ?>">
+<?php if (isset($extra_css)): ?>
+<link rel="stylesheet" href="../assets/css/<?= str_replace('.css', '', $extra_css) ?><?= $css_ext ?>">
+<?php endif; ?>
 </head>
 <body>
 <!-- 顶部导航栏（移动端） -->
@@ -75,6 +77,15 @@ $current_page=basename($_SERVER['PHP_SELF']);
 <a class="nav-link <?=$current_page=='index.php'?'active':''?>" href="index.php">
 <i class="fas fa-chart-line"></i> 仪表板
 </a>
+<a class="nav-link <?=$current_page=='settings.php'?'active':''?>" href="settings.php">
+<i class="fas fa-cog"></i> 系统设置
+</a>
+<a class="nav-link <?=$current_page=='site_settings.php'?'active':''?>" href="site_settings.php">
+<i class="fas fa-globe"></i> 网站设置
+</a>
+<a class="nav-link <?=$current_page=='stats.php'?'active':''?>" href="stats.php">
+<i class="fas fa-chart-bar"></i> 访问统计
+</a>
 <a class="nav-link <?=$current_page=='recipe_list.php'?'active':''?>" href="recipe_list.php">
 <i class="fas fa-utensils"></i> 菜谱列表
 </a>
@@ -86,12 +97,6 @@ $current_page=basename($_SERVER['PHP_SELF']);
 </a>
 <a class="nav-link <?=in_array($current_page,['page_list.php','page_add.php','page_edit.php'])?'active':''?>" href="page_list.php">
 <i class="fas fa-file-alt"></i> 页面管理
-</a>
-<a class="nav-link <?=$current_page=='settings.php'?'active':''?>" href="settings.php">
-<i class="fas fa-cog"></i> 系统设置
-</a>
-<a class="nav-link <?=$current_page=='site_settings.php'?'active':''?>" href="site_settings.php">
-<i class="fas fa-globe"></i> 网站设置
 </a>
 <a class="nav-link <?=$current_page=='compress.php'?'active':''?>" href="compress.php">
 <i class="fas fa-compress"></i> 代码压缩

@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once '../includes/functions.php';
 $db_path='../data/data.db';
 if(isset($_POST['action'])&&$_POST['action']==='save'){
 $success=true;
@@ -18,6 +19,7 @@ $settings=[
 'geo_placename'=>$_POST['geo_placename']??'',
 'geo_position'=>$_POST['geo_position']??'',
 'enable_readme_browse'=>isset($_POST['enable_readme_browse'])?'1':'0',
+'show_total_visits'=>isset($_POST['show_total_visits'])?'1':'0',
 'environment_mode'=>$_POST['environment_mode']??'production',
 'compress_css'=>isset($_POST['compress_css'])?'1':'0',
 ];
@@ -33,6 +35,7 @@ if($check->fetchColumn()==0){
 $desc='';
 if($key=='environment_mode') $desc='环境模式：production或development';
 if($key=='enable_readme_browse') $desc='是否启用readme目录浏览';
+if($key=='show_total_visits') $desc='是否在前台底部显示总访问量';
 if($key=='compress_css') $desc='是否压缩CSS文件为单行格式';
 $insert=$db->prepare("INSERT INTO settings (key, value, description) VALUES (?, ?, ?)");
 $insert->execute([$key,$value,$desc]);
@@ -40,31 +43,24 @@ $insert->execute([$key,$value,$desc]);
 }
 // 如果启用了CSS压缩，执行压缩
 if(isset($settings['compress_css']) && $settings['compress_css'] === '1'){
-$css_files = [
-'../assets/css/frontend.css',
-'../assets/css/admin.css',
-'../assets/css/login.css',
-'../assets/css/recipe-detail.css'
-];
-foreach($css_files as $css_file){
-if(file_exists($css_file)){
-$content = file_get_contents($css_file);
-// 压缩CSS：移除注释、换行、多余空格
-$compressed = preg_replace(
-[
-'/\/\*[\s\S]*?\*\//', // 移除多行注释
-'/\/\*.*?\*\//',     // 移除单行注释
-'/\s+/',             // 多个空格替换为一个空格
-'/\s*([{}:;,])\s*/', // 移除符号周围空格
-'/;}/'                // 移除最后一个分号前的多余字符
-],
-['', '', ' ', '$1', '}'],
-$content
-);
-file_put_contents($css_file, $compressed);
-}
-}
-$message='✓ 网站设置保存成功！CSS文件已压缩。';
+    $base_dir = dirname(__DIR__);
+    $css_files = [
+        $base_dir . '/assets/css/frontend.css',
+        $base_dir . '/assets/css/admin.css',
+        $base_dir . '/assets/css/login.css',
+        $base_dir . '/assets/css/recipe-detail.css'
+    ];
+    foreach($css_files as $css_file){
+        if(file_exists($css_file)){
+            $content = file_get_contents($css_file);
+            // 使用公共函数压缩CSS
+            $compressed = minify_css($content);
+            // 生成 .min.css 文件
+            $min_file = str_replace('.css', '.min.css', $css_file);
+            file_put_contents($min_file, $compressed);
+        }
+    }
+$message='✓ 网站设置保存成功！CSS文件已压缩为 .min.css。';
 }else{
 $message='✓ 网站设置保存成功！';
 }
@@ -216,7 +212,19 @@ document.getElementById('environment_mode').addEventListener('change', function(
 document.getElementById('environment_mode').dispatchEvent(new Event('change'));
 </script>
 <hr class="my-4">
-<h5 class="mb-3"><i class="fas fa-book"></i> 文档中心设置</h5>
+<h5 class="mb-3"><i class="fas fa-sliders-h"></i> 其他设置</h5>
+<div class="mb-3">
+<div class="form-check form-switch">
+<input class="form-check-input" type="checkbox" name="show_total_visits"
+id="show_total_visits" <?=($settings['show_total_visits']??'0')=='1'?'checked':''?>>
+<label class="form-check-label" for="show_total_visits">
+<i class="fas fa-chart-line"></i> 在前台底部显示总访问量
+</label>
+</div>
+<small class="form-text text-muted">
+开启后，将在页面底部显示网站的总访问量统计
+</small>
+</div>
 <div class="mb-3">
 <div class="form-check form-switch">
 <input class="form-check-input" type="checkbox" name="enable_readme_browse"

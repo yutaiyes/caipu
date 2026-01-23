@@ -7,15 +7,21 @@ if (!file_exists(DB_PATH)) {
     header('Location: install.php');
     exit;
 }
-$db = new PDO('sqlite:' . DB_PATH);
+
+// 创建数据库连接
+try {
+    $db = new PDO('sqlite:' . DB_PATH);
+    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (Exception $e) {
+    die('数据库连接失败');
+}
+
+// 记录访问统计 (已禁用以提升性能)
+// record_visit(); // 完全禁用以提升性能
 
 // 自动设置 base_path（如果未设置）
 if (!isset($base_path)) {
-    // 简单的自动检测逻辑
     $base_path = './';
-    // 如果在admin目录或includes目录（不应该直接访问），则需要调整
-    // 但 header.php 通常是被根目录文件引入的，所以 ./ 是安全的
-    // 如果是被子目录文件引入，调用者应该设置 $base_path
 }
 
 // 获取网站设置
@@ -56,8 +62,6 @@ if (isset($_GET['slug'])) {
     }
 }
 
-// 12位解码函数已移至 includes/functions.php
-
 // 获取分类列表
 $categories = $db->query("SELECT c.*, COUNT(r.id) as recipe_count
     FROM categories c
@@ -71,12 +75,6 @@ $categories = $db->query("SELECT c.*, COUNT(r.id) as recipe_count
     <base href="<?= BASE_URI ?>">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($page ? $page['title'] . ' - ' : '') . htmlspecialchars($site_title) ?></title>
-    <meta name="description" content="<?= htmlspecialchars($page ? $page['description'] : $site_description) ?>">
-    <meta name="keywords" content="<?= htmlspecialchars($page ? $page['keywords'] : $site_keywords) ?>">
-    
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
     <title><?= isset($page_title) ? htmlspecialchars($page_title) . ' - ' : '' ?><?= htmlspecialchars($site_title) ?></title>
     <meta name="description" content="<?= isset($page_description) ? htmlspecialchars($page_description) : htmlspecialchars($site_description) ?>">
     <meta name="keywords" content="<?= isset($page_keywords) ? htmlspecialchars($page_keywords) : htmlspecialchars($site_keywords) ?>">
@@ -90,11 +88,30 @@ $categories = $db->query("SELECT c.*, COUNT(r.id) as recipe_count
     <?php if ($geo_position): ?>
     <meta name="geo.position" content="<?= htmlspecialchars($geo_position) ?>">
     <?php endif; ?>
+    <?php
+    // CSS版本号：生产环境使用文件修改时间，开发环境使用时间戳
+    $use_min = (getSiteSetting('compress_css') === '1');
+    $env_mode = getSiteSetting('environment_mode', 'production');
+    $frontend_css_path = __DIR__ . '/../assets/css/frontend' . ($use_min ? '.min' : '') . '.css';
+    if ($env_mode === 'development') {
+        $css_version = '?v=' . time();
+    } else {
+        $css_version = '?v=' . (file_exists($frontend_css_path) ? filemtime($frontend_css_path) : time());
+    }
+    ?>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="<?= isset($base_path) ? $base_path : '' ?>assets/css/frontend.css">
-    <?php if (isset($extra_css)): ?>
-    <link rel="stylesheet" href="<?= isset($base_path) ? $base_path : '' ?>assets/css/<?= $extra_css ?>">
+    <link rel="stylesheet" href="<?= isset($base_path) ? $base_path : '' ?>assets/css/frontend<?= $use_min ? '.min' : '' ?>.css<?= $css_version ?>">
+    <?php if (isset($extra_css)):
+        $css_name = str_replace('.css', '', $extra_css);
+        $extra_css_path = __DIR__ . '/../assets/css/' . $css_name . ($use_min ? '.min' : '') . '.css';
+        if ($env_mode === 'development') {
+            $extra_css_version = '?v=' . time();
+        } else {
+            $extra_css_version = '?v=' . (file_exists($extra_css_path) ? filemtime($extra_css_path) : time());
+        }
+    ?>
+    <link rel="stylesheet" href="<?= isset($base_path) ? $base_path : '' ?>assets/css/<?= $css_name ?><?= $use_min ? '.min' : '' ?>.css<?= $extra_css_version ?>">
     <?php endif; ?>
 </head>
 <body>
@@ -117,16 +134,16 @@ $categories = $db->query("SELECT c.*, COUNT(r.id) as recipe_count
                 </li>
                 <?php if (!empty($categories)): ?>
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                    <a class="nav-link dropdown-toggle" href="javascript:void(0);" role="button" data-bs-toggle="dropdown">
                         <i class="fas fa-list"></i> 分类
                     </a>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="<?= isset($base_path) ? $base_path : '' ?>index.php"><i class="fas fa-th"></i> 全部分类</a></li>
+                        <li><a class="dropdown-item" href="<?= isset($base_path) ? $base_path : '' ?>"><i class="fas fa-th"></i> 全部分类</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <?php foreach ($categories as $cat): ?>
                         <?php if ($cat['recipe_count'] > 0): ?>
                         <li>
-                            <a class="dropdown-item" href="<?= isset($base_path) ? $base_path : '' ?>index.php?cat=<?= $cat['id'] ?>">
+                            <a class="dropdown-item" href="<?= isset($base_path) ? $base_path : '' ?>?cat=<?= $cat['id'] ?>">
                                 <i class="fas fa-tag"></i> <?= htmlspecialchars($cat['name']) ?>
                                 <span class="badge bg-secondary ms-1"><?= $cat['recipe_count'] ?></span>
                             </a>
@@ -138,9 +155,18 @@ $categories = $db->query("SELECT c.*, COUNT(r.id) as recipe_count
                 <?php endif; ?>
                 <?php if (!empty($pages)): ?>
                 <?php foreach ($pages as $nav_page): ?>
+                <?php
+                    // 生成页面URL
+                    if (Config::get('rewrite_enabled') === '1') {
+                        $page_url = encode_id($nav_page['id'], 'page') . '.html';
+                    } else {
+                        $page_url = 'page.php?base=' . encode_id($nav_page['id'], 'page');
+                    }
+                    $page_url = (isset($base_path) ? $base_path : '') . $page_url;
+                ?>
                 <li class="nav-item">
                     <a class="nav-link <?= isset($page_slug) && $page_slug == $nav_page['slug'] ? 'active' : '' ?>"
-                       href="<?= isset($base_path) ? $base_path : '' ?>page.php?slug=<?= htmlspecialchars($nav_page['slug']) ?>">
+                       href="<?= $page_url ?>">
                         <i class="fas fa-file-alt"></i> <?= htmlspecialchars($nav_page['title']) ?>
                     </a>
                 </li>

@@ -17,13 +17,24 @@ define('ADMIN_DIR', 'admin');
 define('DB_PATH', __DIR__ . '/data/data.db');
 
 // 自动检测并定义 BASE_URI
+$root_fs_path = str_replace('\\', '/', __DIR__);
+$current_script_fs_path = str_replace('\\', '/', dirname($_SERVER['SCRIPT_FILENAME']));
 $script_dir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
-// 如果在admin目录下，向上一级
-if (strpos($script_dir, '/admin') !== false) {
-    $base_uri = dirname($script_dir) . '/';
+
+// 计算当前脚本相对于根目录的路径
+if (strpos($current_script_fs_path, $root_fs_path) === 0) {
+    $relative_path = substr($current_script_fs_path, strlen($root_fs_path));
+    // 如果在子目录中（例如 /admin 或 /aconsole），从 web 路径中移除该子目录部分
+    if ($relative_path !== '' && substr($script_dir, -strlen($relative_path)) === $relative_path) {
+        $base_uri = substr($script_dir, 0, -strlen($relative_path));
+    } else {
+        $base_uri = $script_dir;
+    }
 } else {
-    $base_uri = $script_dir . '/';
+    // 异常情况回退
+    $base_uri = $script_dir;
 }
+
 // 确保以/结尾且不含双斜杠
 $base_uri = rtrim(str_replace('//', '/', $base_uri), '/') . '/';
 define('BASE_URI', $base_uri);
