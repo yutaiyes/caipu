@@ -1,10 +1,6 @@
 <?php
 require'layout_header.php';
 
-// 演示模式检查
-require_once 'demo_mode_check.php';
-check_demo_mode_post();
-
 $id=(int)$_GET['id'];
 $recipe=$db->query("SELECT * FROM recipes WHERE id=$id")->fetch();
 $cats=$db->query("SELECT * FROM categories")->fetchAll();
@@ -13,9 +9,24 @@ echo "<script>alert('菜谱不存在！');location.href='recipe_list.php';</scri
 exit;
 }
 if($_POST){
+// 处理封面图片上传
+$cover = $recipe['cover'];
+if(isset($_FILES['cover']) && $_FILES['cover']['error'] == 0){
+    $upload_dir = __DIR__ . '/../uploads/';
+    $ext = pathinfo($_FILES['cover']['name'], PATHINFO_EXTENSION);
+    $filename = 'recipe_' . time() . '_' . uniqid() . '.' . $ext;
+    if(move_uploaded_file($_FILES['cover']['tmp_name'], $upload_dir . $filename)){
+        // 删除旧封面
+        if($recipe['cover'] && file_exists($upload_dir . $recipe['cover'])){
+            unlink($upload_dir . $recipe['cover']);
+        }
+        $cover = $filename;
+    }
+}
+
 $stmt=$db->prepare("
 UPDATE recipes
-SET title=?, description=?, content=?, category_id=?, cost_price=?, sell_price=?, is_public=?
+SET title=?, description=?, content=?, category_id=?, cost_price=?, sell_price=?, is_public=?, cover=?
 WHERE id=?
 ");
 $stmt->execute([
@@ -26,36 +37,58 @@ $_POST['category_id']?:null,
 $_POST['cost_price']?:0,
 $_POST['sell_price']?:0,
 $_POST['is_public'],
+$cover,
 $id
 ]);
-echo "<script>alert('更新成功！');location.href='recipe_list.php';</script>";
+?>
+<script>
+showMessage('更新成功！', 'success');
+setTimeout(() => {
+location.href='recipe_list.php';
+}, 500);
+</script>
+<?php
 exit;
 }
 ?>
 <div class="page-header d-flex justify-content-between align-items-center flex-wrap">
 <h3 class="mb-0"><i class="fas fa-edit"></i> 编辑菜谱</h3>
-<div class="btn-group mt-2 mt-md-0" role="group">
-<button type="button" class="btn btn-sm btn-outline-primary" id="simpleMode">
+<div class="mt-2 mt-md-0 d-flex gap-2 flex-wrap">
+<div role="group" class="btn-group btn-group-sm">
+<button type="button" class="btn btn-outline-primary" id="simpleMode">
 <i class="fas fa-edit"></i> 简单模式
 </button>
-<button type="button" class="btn btn-sm btn-outline-primary active" id="advancedMode">
+<button type="button" class="btn btn-primary active" id="advancedMode">
 <i class="fas fa-code"></i> 高级模式
 </button>
+</div>
+<div role="group" class="btn-group btn-group-sm">
+<a href="recipe_list.php" class="btn btn-secondary" title="取消">
+<i class="fas fa-times"></i> 取消
+</a>
+<button type="submit" form="recipeForm" class="btn btn-success" title="保存">
+<i class="fas fa-save"></i> 保存修改
+</button>
+</div>
 </div>
 </div>
 <div class="card">
 <div class="card-body">
-<form method="post">
-<div class="row">
+<form method="post" id="recipeForm" enctype="multipart/form-data">
+<!-- 基本信息 -->
+<h6 class="text-primary mb-3 pb-2 border-bottom border-light">
+<i class="fas fa-info-circle"></i> 基本信息
+</h6>
+<div class="row g-3">
 <div class="col-12 col-md-8">
-<div class="mb-3">
+<div>
 <label class="form-label">菜名 <span class="text-danger">*</span></label>
 <input class="form-control" name="title"
 value="<?=htmlspecialchars($recipe['title'])?>" required>
 </div>
 </div>
 <div class="col-12 col-md-4">
-<div class="mb-3">
+<div>
 <label class="form-label">分类</label>
 <select class="form-select" name="category_id">
 <option value="">未分类</option>
@@ -69,36 +102,21 @@ value="<?=htmlspecialchars($recipe['title'])?>" required>
 </div>
 </div>
 </div>
-<div class="mb-3">
-<label class="form-label">简介</label>
-<textarea class="form-control" name="description" rows="2"><?=htmlspecialchars($recipe['description'])?></textarea>
+<div class="row g-3 mt-2">
+<div class="col-12 col-md-6">
+<div>
+<label class="form-label">封面图片</label>
+<input type="file" name="cover" class="form-control" accept="image/webp,image/jpeg,image/png,image/gif">
+<?php if($recipe['cover']):?>
+<div class="mt-2">
+<div class="img-preview" style="width:200px;height:150px;background-image:url('../image.php?file=<?=htmlspecialchars($recipe['cover'])?>');background-size:cover;background-position:center;border-radius:6px;background-color:#f8f9fa;"></div>
 </div>
-<div class="mb-3">
-<div class="d-flex justify-content-between align-items-center mb-2">
-<label class="form-label mb-0">详细内容</label>
-<small class="text-muted">
-<i class="fas fa-info-circle"></i> 支持Markdown格式
-</small>
-</div>
-<textarea id="md" name="content"><?=htmlspecialchars($recipe['content'])?></textarea>
-</div>
-<div class="row">
-<div class="col-12 col-md-4">
-<div class="mb-3">
-<label class="form-label">成本价(元)</label>
-<input type="number" step="0.01" class="form-control"
-name="cost_price" value="<?=$recipe['cost_price']?>">
+<?php endif;?>
+<div class="form-text">推荐尺寸：800x600px，支持WebP、JPG、PNG、GIF格式（WebP优先）。上传新封面将自动替换旧封面。</div>
 </div>
 </div>
-<div class="col-12 col-md-4">
-<div class="mb-3">
-<label class="form-label">售价(元)</label>
-<input type="number" step="0.01" class="form-control"
-name="sell_price" value="<?=$recipe['sell_price']?>">
-</div>
-</div>
-<div class="col-12 col-md-4">
-<div class="mb-3">
+<div class="col-12 col-md-6">
+<div>
 <label class="form-label">状态</label>
 <select class="form-select" name="is_public">
 <option value="1" <?=$recipe['is_public']?'selected':''?>>公开</option>
@@ -107,8 +125,49 @@ name="sell_price" value="<?=$recipe['sell_price']?>">
 </div>
 </div>
 </div>
-<div class="d-flex flex-column flex-md-row gap-2">
-<button type="submit" class="btn btn-primary">
+<div class="mt-3">
+<label class="form-label">简介</label>
+<textarea class="form-control" name="description" rows="2"><?=htmlspecialchars($recipe['description'])?></textarea>
+</div>
+
+<!-- 价格信息 -->
+<h6 class="text-primary mb-3 mt-4 pb-2 border-bottom border-light">
+<i class="fas fa-yen-sign"></i> 价格信息
+</h6>
+<div class="row g-3">
+<div class="col-12 col-md-6">
+<div>
+<label class="form-label">成本价(元)</label>
+<input type="number" step="0.01" class="form-control"
+name="cost_price" value="<?=$recipe['cost_price']?>">
+</div>
+</div>
+<div class="col-12 col-md-6">
+<div>
+<label class="form-label">售价(元)</label>
+<input type="number" step="0.01" class="form-control"
+name="sell_price" value="<?=$recipe['sell_price']?>">
+</div>
+</div>
+</div>
+
+<!-- 详细内容 -->
+<h6 class="text-primary mb-3 mt-4 pb-2 border-bottom border-light">
+<i class="fas fa-file-alt"></i> 详细内容
+</h6>
+<div>
+<div class="d-flex justify-content-between align-items-center mb-2">
+<label class="form-label mb-0">菜谱内容</label>
+<span class="badge bg-light text-secondary">
+<i class="fas fa-info-circle"></i> 支持Markdown格式
+</span>
+</div>
+<textarea id="md" name="content"><?=htmlspecialchars($recipe['content'])?></textarea>
+</div>
+
+<!-- 操作按钮 -->
+<div class="d-flex flex-column flex-md-row gap-2 mt-4 pt-3 border-top">
+<button type="submit" class="btn btn-success">
 <i class="fas fa-save"></i> 保存修改
 </button>
 <?php
@@ -123,7 +182,7 @@ if ($rewrite_enabled) {
     $preview_url = FRONTEND_BASE_URL . "recipe.php?base=" . $base12;
 }
 ?>
-<a href="<?= $preview_url ?>" target="_blank" class="btn btn-success">
+<a href="<?= $preview_url ?>" target="_blank" class="btn btn-info">
 <i class="fas fa-eye"></i> 预览页面
 </a>
 <a href="recipe_list.php" class="btn btn-secondary">
@@ -168,6 +227,10 @@ let easyMDE = null;
 let isAdvancedMode = true;
 // 初始化高级模式编辑器
 function initAdvancedEditor() {
+if (typeof EasyMDE === 'undefined') {
+    setTimeout(initAdvancedEditor, 50);
+    return;
+}
 if (easyMDE) return;
 easyMDE = new EasyMDE({
     element: document.getElementById("md"),
@@ -201,9 +264,17 @@ easyMDE = new EasyMDE({
         delay: 1000,
     },
     toolbar: [
-        "bold", "italic", "heading", "|",
-        "quote", "unordered-list", "ordered-list", "|",
-        "link", "upload-image", "|",
+        "undo", "redo", "|",
+        "bold", "italic", "strikethrough", "heading", "heading-1", "heading-2", "heading-3", "|",
+        "quote", "unordered-list", "ordered-list",
+        {
+            name: "insert-table",
+            action: EasyMDE.drawTable,
+            className: "fa fa-table",
+            title: "Insert Table"
+        },
+        "code", "horizontal-rule", "|",
+        "link", "image", "upload-image", "|",
         "preview", "side-by-side", "fullscreen", "|",
         "guide"
     ],
@@ -216,20 +287,22 @@ easyMDE = new EasyMDE({
 // 切换到简单模式
 function switchToSimpleMode() {
 if (!isAdvancedMode) return;
-const content = easyMDE ? easyMDE.value() : '';
+const textarea = document.getElementById('md');
+const content = easyMDE ? easyMDE.value() : textarea.value;
 // 销毁EasyMDE
 if (easyMDE) {
 easyMDE.toTextArea();
 easyMDE = null;
 }
 // 显示简单文本框
-const textarea = document.getElementById('md');
 textarea.value = content;
 textarea.className = 'form-control simple-editor';
 textarea.style.display = 'block';
 isAdvancedMode = false;
 document.getElementById('simpleMode').classList.add('active');
 document.getElementById('advancedMode').classList.remove('active');
+document.getElementById('simpleMode').classList.replace('btn-outline-primary', 'btn-primary');
+document.getElementById('advancedMode').classList.replace('btn-primary', 'btn-outline-primary');
 }
 // 切换到高级模式
 function switchToAdvancedMode() {
@@ -247,14 +320,24 @@ easyMDE.value(content);
 isAdvancedMode = true;
 document.getElementById('advancedMode').classList.add('active');
 document.getElementById('simpleMode').classList.remove('active');
+document.getElementById('advancedMode').classList.replace('btn-outline-primary', 'btn-primary');
+document.getElementById('simpleMode').classList.replace('btn-primary', 'btn-outline-primary');
 }
-// 页面加载时初始化
-document.addEventListener('DOMContentLoaded', function() {
+function bindEditorModeEvents() {
 initAdvancedEditor();
-// 绑定切换按钮
-document.getElementById('simpleMode').addEventListener('click', switchToSimpleMode);
-document.getElementById('advancedMode').addEventListener('click', switchToAdvancedMode);
-});
+const simpleButton = document.getElementById('simpleMode');
+const advancedButton = document.getElementById('advancedMode');
+if (simpleButton) {
+simpleButton.addEventListener('click', switchToSimpleMode);
+}
+if (advancedButton) {
+advancedButton.addEventListener('click', switchToAdvancedMode);
+}
+}
+if (document.readyState === 'loading') {
+document.addEventListener('DOMContentLoaded', bindEditorModeEvents);
+} else {
+bindEditorModeEvents();
+}
 </script>
 <?php require'layout_footer.php';?>
-

@@ -88,28 +88,30 @@ if (!function_exists('record_visit')) {
     }
 }
 
-// 获取总访问量（已优化）
+// 获取总访问量
 if (!function_exists('get_total_visits')) {
     function get_total_visits() {
-        // 直接返回0，避免COUNT查询导致页面加载缓慢
-        return 0;
-
-        /*
+        global $db;
         try {
-            if (!file_exists(DB_PATH)) return 0;
-            $db = new PDO('sqlite:' . DB_PATH);
-            // 尝试从settings获取缓存值
-            $count = $db->query("SELECT value FROM settings WHERE key = 'cached_total_visits'")->fetchColumn();
-            if ($count !== false) {
-                return (int)$count;
+            if (!isset($db) || !$db) {
+                if (!file_exists(DB_PATH)) {
+                    return 0;
+                }
+                $db = new PDO('sqlite:' . DB_PATH);
+                $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             }
-            // 如果没有缓存，执行COUNT查询（数据量大时会很慢）
-            $count = $db->query("SELECT COUNT(*) FROM visit_logs")->fetchColumn();
-            return $count ? (int)$count : 0;
+            $visit_logs_exists = $db->query("SELECT name FROM sqlite_master WHERE type='table' AND name='visit_logs'")->fetchColumn();
+            if ($visit_logs_exists) {
+                return (int)$db->query("SELECT COUNT(*) FROM visit_logs")->fetchColumn();
+            }
+            $visits_exists = $db->query("SELECT name FROM sqlite_master WHERE type='table' AND name='visits'")->fetchColumn();
+            if ($visits_exists) {
+                return (int)$db->query("SELECT COUNT(*) FROM visits")->fetchColumn();
+            }
+            return 0;
         } catch (Exception $e) {
             return 0;
         }
-        */
     }
 }
 
@@ -146,18 +148,75 @@ if (!function_exists('minify_js')) {
     }
 }
 
-// 检查演示模式
-if (!function_exists('is_demo_mode')) {
-    function is_demo_mode() {
-        // 从数据库读取演示模式设置
-        return Config::get('demo_mode', '0') === '1';
+// 重命名数据库文件
+if (!function_exists('rename_database')) {
+    function rename_database($new_name) {
+        $data_dir = dirname(DB_PATH);
+        $old_path = DB_PATH;
+        $new_path = $data_dir . '/' . $new_name;
+        
+        // 验证新名称
+        if (empty($new_name)) {
+            return ['success' => false, 'message' => '数据库名称不能为空'];
+        }
+        
+        // 检查扩展名
+        if (!preg_match('/\.db$/i', $new_name)) {
+            $new_name .= '.db';
+            $new_path = $data_dir . '/' . $new_name;
+        }
+        
+        // 检查是否与当前文件相同
+        if ($old_path === $new_path) {
+            return ['success' => false, 'message' => '新名称与当前名称相同'];
+        }
+        
+        // 检查目标文件是否存在
+        if (file_exists($new_path)) {
+            return ['success' => false, 'message' => '该数据库名称已存在'];
+        }
+        
+        // 关闭所有数据库连接
+        try {
+            $GLOBALS['db'] = null;
+            Config::$db = null;
+        } catch (Exception $e) {
+            // 忽略
+        }
+        
+        // 重命名文件
+        if (!rename($old_path, $new_path)) {
+            return ['success' => false, 'message' => '重命名失败，请检查文件权限'];
+        }
+        
+        // 创建 .htaccess 保护数据库目录
+        $htaccess_path = $data_dir . '/.htaccess';
+        if (!file_exists($htaccess_path)) {
+            file_put_contents($htaccess_path, "Deny from all\n");
+        }
+        
+        return ['success' => true, 'message' => '数据库重命名成功', 'new_path' => $new_path];
     }
 }
 
-// 演示模式操作限制提示
-if (!function_exists('demo_mode_message')) {
-    function demo_mode_message() {
-        return '<div class="alert alert-warning"><i class="fas fa-exclamation-triangle"></i> 演示模式下禁止此操作</div>';
+// 获取数据库文件列表
+if (!function_exists('get_database_list')) {
+    function get_database_list() {
+        $data_dir = dirname(DB_PATH);
+        $db_files = glob($data_dir . '/*.db');
+        
+        $list = [];
+        foreach ($db_files as $file) {
+            $list[] = [
+                'name' => basename($file),
+                'path' => $file,
+                'size' => filesize($file),
+                'modified' => filemtime($file),
+                'is_current' => ($file === DB_PATH)
+            ];
+        }
+        
+        return $list;
     }
 }
 ?>

@@ -6,7 +6,7 @@ require_once'security.php';
 // 先引入 config.php，确保函数可用
 require_once '../config.php';
 
-$db=new PDO('sqlite:../data/data.db');
+$db=new PDO('sqlite:' . DB_PATH);
 $error='';
 $message='';
 if(isset($_SESSION['profile_message'])){

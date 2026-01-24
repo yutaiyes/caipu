@@ -13,8 +13,38 @@ date_default_timezone_set('Asia/Shanghai');
 // 管理后台目录名称（可自定义以增强安全性）
 define('ADMIN_DIR', 'admin');
 
-// 数据库文件路径
-define('DB_PATH', __DIR__ . '/data/data.db');
+// 自动查找数据库文件
+function get_db_path() {
+    $data_dir = __DIR__ . '/data';
+    if (!is_dir($data_dir)) {
+        mkdir($data_dir, 0755, true);
+    }
+    
+    $default_db = $data_dir . '/data.db';
+    if (file_exists($default_db)) {
+        return $default_db;
+    }
+    
+    $db_files = glob($data_dir . '/*.db');
+    
+    if (empty($db_files)) {
+        return $default_db;
+    }
+    
+    if (count($db_files) === 1) {
+        return $db_files[0];
+    }
+    
+    if (in_array($default_db, $db_files)) {
+        return $default_db;
+    }
+    
+    // 否则使用第一个找到的数据库
+    return $db_files[0];
+}
+
+// 数据库文件路径（自动查找）
+define('DB_PATH', get_db_path());
 
 // 自动检测并定义 BASE_URI
 $root_fs_path = str_replace('\\', '/', __DIR__);
@@ -48,9 +78,6 @@ define('DEFAULT_SITE_DESC', '专业的商用菜谱管理系统');
 define('DEFAULT_SITE_KEYWORDS', '菜谱,美食,烹饪,食谱,商用菜谱');
 define('DEFAULT_SITE_AUTHOR', '商用菜谱库');
 define('PER_PAGE', 12);
-
-// 演示模式（禁止提交和修改权限）
-define('DEMO_MODE', false);
 
 // 配置管理类
 class Config {

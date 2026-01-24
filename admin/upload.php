@@ -169,7 +169,7 @@ if (!isset($_SESSION['admin'])) {
     exit;
 }
 
-$db = new PDO('sqlite:../data/data.db');
+$db = new PDO('sqlite:' . DB_PATH);
 
 // 获取已上传的图片列表
 $upload_dir = '../uploads/images';
@@ -195,8 +195,8 @@ require 'layout_header.php';
 </div>
 
 <div class="alert alert-info">
-    <i class="fas fa-info-circle"></i> 
-    <strong>上传说明：</strong>支持 JPG、PNG、GIF、WebP 格式图片，单个文件最大 5MB。
+    <i class="fas fa-info-circle"></i>
+    <strong>上传说明：</strong>支持 WebP、JPG、PNG、GIF 格式图片（推荐使用WebP格式以获得更好压缩效果），单个文件最大 5MB。
 </div>
 
 <!-- 上传区域 -->
@@ -208,8 +208,8 @@ require 'layout_header.php';
         <form id="upload-form" enctype="multipart/form-data">
             <div class="mb-3">
                 <label for="file-input" class="form-label">选择图片文件</label>
-                <input type="file" class="form-control" id="file-input" name="file" accept="image/*" required>
-                <div class="form-text">支持格式：JPG, PNG, GIF, WebP | 最大大小：5MB</div>
+                <input type="file" class="form-control" id="file-input" name="file" accept="image/webp,image/jpeg,image/png,image/gif" required>
+                <div class="form-text">支持格式：WebP, JPG, PNG, GIF（优先WebP） | 最大大小：5MB</div>
             </div>
             
             <div id="upload-message" style="display: none;"></div>

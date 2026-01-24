@@ -303,21 +303,21 @@
 }
 @media (max-width:576px) {
     .btn-group-sm .btn {
-    font-size:0.75rem;
-    padding:0.25rem 0.4rem
-}
-.btn-group-sm .btn i {
-    font-size:0.7rem
-}
-.btn-group-sm .btn .btn-text {
-    display:none
-}
+        font-size:0.75rem;
+        padding:0.25rem 0.4rem
+    }
+    .btn-group-sm .btn i {
+        font-size:0.7rem
+    }
+    .btn-group-sm .btn .btn-text {
+        display:none
+    }
 
 }
 @media (min-width:577px) {
     .btn .btn-icon-only {
-    display:none
-}
+        display:none
+    }
 
 }
 .image-actions {
@@ -330,16 +330,83 @@
 }
 @media (max-width:768px) {
     .image-grid .col-md-3 {
-    flex:0 0 50%;
-    max-width:50%
-}
+        flex:0 0 50%;
+        max-width:50%
+    }
 
 }
 @media (max-width:576px) {
     .image-grid .col-md-3 {
-    flex:0 0 100%;
-    max-width:100%
-}
+        flex:0 0 100%;
+        max-width:100%
+    }
 
 }
+/* 表格移动端优化 */
+@media (max-width:767.98px) {
+    .table tbody tr {
+        display:block;
+        border:1px solid #e9ecef;
+        padding:15px;
+        margin-bottom:12px;
+        background:white;
+        border-radius:10px;
+        box-shadow:0 2px 6px rgba(0,0,0,0.04);
+        transition:box-shadow 0.3s
+    }
+    .table tbody tr:hover {
+        box-shadow:0 4px 12px rgba(102,126,234,0.12)
+    }
+    .table thead {
+        display:none
+    }
+    .table tbody td {
+        display:block;
+        width:100%;
+        padding:8px 0;
+        border:none
+    }
+    .table tbody td:first-child {
+        padding-top:0
+    }
+    .table tbody td:last-child {
+        padding-bottom:0
+    }
+    .d-none.d-md-table-cell {
+        display:none
+    }
+    .d-md-none {
+        display:block
+    }
+    .table .w-100 {
+        width:100%
+    }
+    .table .text-truncate {
+        white-space:normal;
+        max-width:none
+    }
+    .table .badge {
+        font-size:0.75rem;
+        padding:0.3rem 0.6rem
+    }
+    .btn-group {
+        width:100%;
+        margin-top:12px;
+        gap:8px
+    }
+    .btn-group .btn {
+        flex:1;
+        text-align:center;
+        justify-content:center;
+        padding:8px;
+        min-width:0
+    }
+    .btn-group .btn i {
+        font-size:1rem
+    }
+    .btn-group .btn .d-md-inline {
+        display:inline
+    }
+}
+
 

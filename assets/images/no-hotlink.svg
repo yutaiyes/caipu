@@ -1,0 +1,15 @@
+<svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100%" height="100%" fill="#f8f9fa"/>
+  <text x="200" y="120" font-family="Arial, sans-serif" font-size="20" fill="#6c757d" text-anchor="middle">
+    禁止盗链
+  </text>
+  <text x="200" y="150" font-family="Arial, sans-serif" font-size="16" fill="#6c757d" text-anchor="middle">
+    Hotlink Protection
+  </text>
+  <text x="200" y="180" font-family="Arial, sans-serif" font-size="14" fill="#adb5bd" text-anchor="middle">
+    请访问原网站查看图片
+  </text>
+  <text x="200" y="200" font-family="Arial, sans-serif" font-size="14" fill="#adb5bd" text-anchor="middle">
+    Please visit the original website
+  </text>
+</svg>

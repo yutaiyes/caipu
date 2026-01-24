@@ -61,6 +61,19 @@ body {
     color:#495057;
     font-weight:500
 }
+.recipe-cover-container {
+    margin:30px 0;
+    border-radius:15px;
+    overflow:hidden;
+    box-shadow:0 4px 20px rgba(0,0,0,0.1)
+}
+.recipe-cover {
+    width:100%;
+    height:400px;
+    object-fit:cover;
+    display:block;
+    background-color:#f8f9fa
+}
 .recipe-header {
     background:white;
     border-radius:15px;
@@ -233,7 +246,16 @@ body {
     /* 闅愯棌鏃犲叧鍏冪礌 */
     .navbar, .breadcrumb-section, .action-buttons, .action-buttons-bottom, .related-recipes, .footer, .col-lg-3, .price-box, .btn-print, .btn-back, .lead, .recipe-header  {
      display: none !important;
-     
+
+}
+
+    /* 鍐呭鍖哄煙 - 鍗充娉℃噰鍝嶅湪瀹瑰櫒鍚悆 */
+    .recipe-cover-container {
+     margin: 15px 0;
+     border-radius: 10px;
+}
+    .recipe-cover {
+     height: 300px !important;
 }
 
     

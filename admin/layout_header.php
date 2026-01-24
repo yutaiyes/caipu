@@ -1,6 +1,10 @@
 <?php
 // 引入配置文件（包含时区设置）
-require_once '../config.php';
+$config_path = __DIR__ . '/../config.php';
+if (!file_exists($config_path)) {
+    $config_path = dirname(__DIR__) . '/config.php';
+}
+require_once $config_path;
 
 // 生成前端HTTP基础URL（用于后台预览）
 $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
@@ -22,7 +26,7 @@ exit;
 }
 // 设置管理员登录状态，供前端检测
 $_SESSION['admin_logged_in'] = true;
-$db=new PDO('sqlite:../data/data.db');
+$db=new PDO('sqlite:'.DB_PATH);
 
 // 获取 compress_css 设置（使用 Config::get 而不是直接查询数据库）
 $compress_css_setting = Config::get('compress_css', '0');
@@ -39,8 +43,9 @@ $current_page=basename($_SERVER['PHP_SELF']);
 $use_min = ($compress_css_setting === '1');
 $css_ext = $use_min ? '.min.css' : '.css';
 ?>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="preconnect" href="https://cdn.staticfile.org" crossorigin>
+<link rel="stylesheet" href="https://cdn.staticfile.org/bootstrap/5.3.3/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdn.staticfile.org/font-awesome/6.5.1/css/all.min.css">
 <link rel="stylesheet" href="../assets/css/admin<?= $css_ext ?>">
 <?php if (isset($extra_css)): ?>
 <link rel="stylesheet" href="../assets/css/<?= str_replace('.css', '', $extra_css) ?><?= $css_ext ?>">
@@ -184,6 +189,8 @@ $css_ext = $use_min ? '.min.css' : '.css';
 <!-- 主内容区 -->
 <div class="col-md-10 content-wrapper">
 <div class="p-4">
+<!-- 消息提示区 -->
+<div id="messageContainer"></div>
 <?php if(defined('ENVIRONMENT_MODE') && ENVIRONMENT_MODE === 'development'): ?>
 <div class="alert alert-warning alert-dismissible fade show" role="alert">
 <i class="fas fa-exclamation-triangle"></i> 

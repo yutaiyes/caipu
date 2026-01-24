@@ -1,12 +1,39 @@
 <?php
 session_start();
-require_once '../includes/functions.php';
-$db_path='../data/data.db';
+require_once '../config.php';
+
+// 数据库重命名处理
+if(isset($_POST['action'])&&$_POST['action']==='rename_database'){
+    $success=true;
+    $message='';
+    $new_name = trim($_POST['new_db_name']??'');
+    
+    try{
+        $result = rename_database($new_name);
+        if($result['success']){
+            $message='✓ 数据库重命名成功！';
+            // 重定向到当前页面以更新DB_PATH
+            echo '<script>alert("'.$message.'");window.location.href="site_settings.php";</script>';
+            exit;
+        }else{
+            $success=false;
+            $message=$result['message'];
+        }
+    }catch(Exception $e){
+        $success=false;
+        $message='重命名失败：'.$e->getMessage();
+    }
+    
+    $show_message=true;
+    $message_type=$success?'success':'danger';
+    $message_text=$message;
+}
+
 if(isset($_POST['action'])&&$_POST['action']==='save'){
 $success=true;
 $message='';
 try{
-$db=new PDO('sqlite:'.$db_path);
+$db=new PDO('sqlite:'.DB_PATH);
 $db->setAttribute(PDO::ATTR_ERRMODE,PDO::ERRMODE_EXCEPTION);
 $settings=[
 'site_title'=>$_POST['site_title']??'',
@@ -22,7 +49,6 @@ $settings=[
 'show_total_visits'=>isset($_POST['show_total_visits'])?'1':'0',
 'environment_mode'=>$_POST['environment_mode']??'production',
 'compress_css'=>isset($_POST['compress_css'])?'1':'0',
-'demo_mode'=>isset($_POST['demo_mode'])?'1':'0',
 ];
 $stmt=$db->prepare("UPDATE settings SET value = ?, updated_at = CURRENT_TIMESTAMP WHERE key = ?");
 foreach($settings as $key=>$value){
@@ -38,7 +64,6 @@ if($key=='environment_mode') $desc='环境模式：production或development';
 if($key=='enable_readme_browse') $desc='是否启用readme目录浏览';
 if($key=='show_total_visits') $desc='是否在前台底部显示总访问量';
 if($key=='compress_css') $desc='是否压缩CSS文件为单行格式';
-if($key=='demo_mode') $desc='演示模式：禁止提交和修改权限';
 $insert=$db->prepare("INSERT INTO settings (key, value, description) VALUES (?, ?, ?)");
 $insert->execute([$key,$value,$desc]);
 }
@@ -75,26 +100,9 @@ $message_type=$success?'success':'danger';
 $message_text=$message;
 }
 require'layout_header.php';
-$db=new PDO('sqlite:'.$db_path);
+$db=new PDO('sqlite:'.DB_PATH);
+$db->setAttribute(PDO::ATTR_ERRMODE,PDO::ERRMODE_EXCEPTION);
 $settings=[];
-$table_exists=$db->query("SELECT name FROM sqlite_master WHERE type='table' AND name='settings'")->fetch();
-if(!$table_exists){
-?>
-<div class="page-header">
-<h3 class="mb-0"><i class="fas fa-cog"></i> 网站设置</h3>
-</div>
-<div class="alert alert-warning">
-<h5><i class="fas fa-exclamation-triangle"></i> 数据库表未初始化</h5>
-<p>settings表尚未创建，请先运行数据库升级脚本。</p>
-<p><a href="../upgrade_settings.php" class="btn btn-primary" target="_blank">
-<i class="fas fa-database"></i> 点击运行升级脚本
-</a></p>
-<p class="mb-0"><small>或在命令行运行：<code>php upgrade_settings.php</code></small></p>
-</div>
-<?php
-require'layout_footer.php';
-exit;
-}
 $result=$db->query("SELECT key, value FROM settings");
 while($row=$result->fetch(PDO::FETCH_ASSOC)){
 $settings[$row['key']]=$row['value'];
@@ -239,18 +247,6 @@ id="enable_readme_browse" <?=($settings['enable_readme_browse']??'0')=='1'?'chec
 开启后，访问 /readme/ 将显示文档列表页面；关闭后（默认），将重定向到后台文档中心
 </small>
 </div>
-<div class="mb-3">
-<div class="form-check form-switch">
-<input class="form-check-input" type="checkbox" name="demo_mode"
-id="demo_mode" <?=($settings['demo_mode']??'0')=='1'?'checked':''?>>
-<label class="form-check-label" for="demo_mode">
-<i class="fas fa-ban"></i> 演示模式
-</label>
-</div>
-<small class="form-text text-muted">
-开启后，将禁止所有提交和修改操作（添加、编辑、删除），用于演示目的
-</small>
-</div>
 <hr class="my-4">
 <h5 class="mb-3"><i class="fas fa-compress-alt"></i> 性能优化设置</h5>
 <div class="mb-3">
@@ -307,6 +303,74 @@ placeholder="例如：39.9042;116.4074 (纬度;经度)">
 <button type="submit" class="btn btn-primary btn-lg">
 <i class="fas fa-save"></i> 保存设置
 </button>
+</form>
+</div>
+</div>
+<!-- 数据库管理 -->
+<div class="card mb-4">
+<div class="card-header bg-warning text-dark">
+<i class="fas fa-database"></i> 数据库管理
+</div>
+<div class="card-body">
+<div class="alert alert-warning">
+<h6><i class="fas fa-exclamation-triangle"></i> 温馨提示</h6>
+<ul class="mb-0">
+<li><strong>数据安全</strong>：修改数据库名称可以增强安全性，防止直接访问数据库</li>
+<li><strong>自动识别</strong>：系统会自动识别data目录下的.db文件</li>
+<li><strong>唯一性保证</strong>：请确保data目录下只有一个.db文件，避免混淆</li>
+<li><strong>备份建议</strong>：重命名前请先备份数据库文件</li>
+<li><strong>格式要求</strong>：数据库名称只能包含字母、数字、下划线和点（扩展名.db）</li>
+</ul>
+</div>
+<div class="mb-3">
+<label class="form-label"><i class="fas fa-file-code"></i> 当前数据库文件</label>
+<div class="input-group">
+<input type="text" class="form-control" value="<?=htmlspecialchars(basename(DB_PATH))?>" readonly>
+<span class="input-group-text">
+<?=round(filesize(DB_PATH)/1024)?> KB
+</span>
+</div>
+<small class="form-text text-muted">数据库文件路径：<?=htmlspecialchars(DB_PATH)?></small>
+</div>
+<div class="mb-3">
+<label class="form-label"><i class="fas fa-edit"></i> 重命名数据库</label>
+<div class="input-group">
+<input type="text" name="new_db_name" class="form-control" id="new_db_name"
+placeholder="输入新的数据库名称，如：mydata.db">
+<button type="submit" name="action" value="rename_database" class="btn btn-warning"
+onclick="return confirmRename();">
+<i class="fas fa-sync-alt"></i> 重命名数据库
+</button>
+</div>
+<small class="form-text text-muted">
+⚠️ 重命名数据库是一个敏感操作，建议在维护期间进行
+</small>
+</div>
+<div class="alert alert-info">
+<h6><i class="fas fa-info-circle"></i> 当前数据库信息</h6>
+<ul class="mb-0">
+<li><strong>文件大小</strong>：<?=number_format(filesize(DB_PATH))?> 字节 (<?=round(filesize(DB_PATH)/1024, 2)?> KB)</li>
+<li><strong>最后修改</strong>：<?=date('Y-m-d H:i:s', filemtime(DB_PATH))?></li>
+<li><strong>文件路径</strong>：<?=htmlspecialchars(DB_PATH)?></li>
+</ul>
+</div>
+<?php
+$db_files = glob(dirname(DB_PATH) . '/*.db');
+if(count($db_files) > 1):?>
+<div class="alert alert-danger">
+<h6><i class="fas fa-exclamation-circle"></i> 检测到多个数据库文件</h6>
+<ul class="mb-0">
+<?php foreach($db_files as $db):?>
+<li><?=htmlspecialchars(basename($db))?> <?=($db === DB_PATH)?'<span class="badge bg-success">当前使用</span>':''?></li>
+<?php endforeach;?>
+</ul>
+<p class="mb-0 mt-2">
+<small>⚠️ 系统只使用标为"当前使用"的数据库文件。建议删除多余的数据库文件以避免混淆。</small>
+</p>
+</div>
+<?php endif;?>
+</div>
+</div>
 <!-- 消息显示区域 -->
 <?php if(isset($show_message)&&$show_message):?>
 <div class="alert alert-<?=$message_type?> alert-dismissible fade show mt-3">
@@ -315,9 +379,28 @@ placeholder="例如：39.9042;116.4074 (纬度;经度)">
 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
 </div>
 <?php endif;?>
-</form>
-</div>
-</div>
+<script>
+function confirmRename() {
+    var newName = document.getElementById('new_db_name').value.trim();
+    if(!newName) {
+        alert('请输入新的数据库名称');
+        return false;
+    }
+    
+    if(!/^[a-zA-Z0-9_.]+\.db$/i.test(newName)) {
+        alert('数据库名称只能包含字母、数字、下划线和点，且必须以.db结尾');
+        return false;
+    }
+    
+    var message = '⚠️ 温馨提示\n\n';
+    message += '1. 此操作将重命名数据库文件\n';
+    message += '2. 系统将自动刷新以识别新数据库\n';
+    message += '3. 请确保已做好数据备份\n\n';
+    message += '确认要将数据库重命名为：' + newName + ' 吗？';
+    
+    return confirm(message);
+}
+</script>
 <!-- 使用说明 -->
 <div class="card">
 <div class="card-header bg-secondary text-white">
@@ -351,25 +434,44 @@ placeholder="例如：39.9042;116.4074 (纬度;经度)">
 <li>提升Google Maps等地图服务的可见性</li>
 </ul>
 <h6 class="mt-3">常用国家代码</h6>
-<div class="row">
-<div class="col-md-6">
-<ul>
-<li><strong>CN</strong> - 中国</li>
-<li><strong>US</strong> - 美国</li>
-<li><strong>JP</strong> - 日本</li>
-<li><strong>KR</strong> - 韩国</li>
-</ul>
-</div>
-<div class="col-md-6">
-<ul>
-<li><strong>GB</strong> - 英国</li>
-<li><strong>FR</strong> - 法国</li>
-<li><strong>DE</strong> - 德国</li>
-<li><strong>SG</strong> - 新加坡</li>
-</ul>
-</div>
+<div class="table-responsive">
+<table class="table table-sm table-bordered">
+<thead>
+<tr>
+<th>国家/地区</th>
+<th>代码</th>
+<th>国家/地区</th>
+<th>代码</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>中国</td>
+<td><strong>CN</strong></td>
+<td>美国</td>
+<td><strong>US</strong></td>
+</tr>
+<tr>
+<td>日本</td>
+<td><strong>JP</strong></td>
+<td>韩国</td>
+<td><strong>KR</strong></td>
+</tr>
+<tr>
+<td>英国</td>
+<td><strong>GB</strong></td>
+<td>法国</td>
+<td><strong>FR</strong></td>
+</tr>
+<tr>
+<td>德国</td>
+<td><strong>DE</strong></td>
+<td>新加坡</td>
+<td><strong>SG</strong></td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 </div>
 <?php require'layout_footer.php';?>
-

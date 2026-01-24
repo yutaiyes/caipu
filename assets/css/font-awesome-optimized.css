@@ -1,0 +1,66 @@
+/* CDN图标加载优化策略 */
+@font-face {
+    font-family: 'Font Awesome 6 Free';
+    font-style: normal;
+    font-weight: 900;
+    font-display: swap; /* 关键：字体交换策略 */
+    src: url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/webfonts/fa-solid-900.woff2') format('woff2');
+}
+
+/* 基础图标样式 */
+.fas, .fa-solid {
+    font-family: 'Font Awesome 6 Free', sans-serif;
+    font-weight: 900;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+    display: inline-block;
+    font-style: normal;
+    font-variant: normal;
+    line-height: 1;
+    text-rendering: auto;
+}
+
+/* 加载状态指示器 */
+.icon-loading {
+    opacity: 0.3;
+    transition: opacity 0.3s ease;
+}
+
+.icon-loaded {
+    opacity: 1;
+}
+
+/* 关键图标内联（首页等关键页面） */
+.icon-critical-home::before { content: "🏠"; }
+.icon-critical-utensils::before { content: "🍽️"; }
+.icon-critical-search::before { content: "🔍"; }
+.icon-critical-eye::before { content: "👁️"; }
+
+/* 优先级加载 */
+.fa-priority {
+    font-display: block; /* 阻塞渲染，确保关键图标立即显示 */
+}
+
+/* 普通图标延迟加载 */
+.fa-deferred {
+    font-display: swap; /* 字体交换，允许后备显示 */
+}
+
+/* 图标容器最小尺寸，防止布局偏移 */
+.icon-container {
+    display: inline-block;
+    min-width: 1em;
+    min-height: 1em;
+    margin-right: 0.5em;
+}
+
+/* 加载动画 */
+@keyframes icon-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.icon-spinning {
+    animation: icon-spin 1s linear infinite;
+    opacity: 0.6;
+}

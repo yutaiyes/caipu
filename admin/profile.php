@@ -6,13 +6,6 @@ header('Location: login.php');
 exit;
 }
 
-// 演示模式检查
-if(is_demo_mode() && $_SERVER['REQUEST_METHOD']==='POST'){
-    $_SESSION['profile_error']='演示模式下禁止修改密码！';
-    header('Location: profile.php');
-    exit;
-}
-
 $db=new PDO('sqlite:'.DB_PATH);
 $db->setAttribute(PDO::ATTR_ERRMODE,PDO::ERRMODE_EXCEPTION);
 if($_SERVER['REQUEST_METHOD']==='POST'){

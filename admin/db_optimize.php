@@ -1,6 +1,7 @@
 <?php
 session_start();
-$db_path='../data/data.db';
+require_once '../config.php';
+$db_path = DB_PATH;
 $backup_dir='../backups';
 if(!is_dir($backup_dir)){
 @mkdir($backup_dir,0755,true);
@@ -436,4 +437,3 @@ onsubmit="return confirm('确定要删除此备份吗？\n\n⚠️ 删除后无�
 </div>
 </div>
 <?php require'layout_footer.php';?>
-

@@ -2,7 +2,6 @@
 require_once 'layout_header.php';
 
 // 获取统计数据
-$db = new PDO('sqlite:../data/data.db');
 
 // 总访问量
 $total_visits = $db->query("SELECT COUNT(*) FROM visit_logs")->fetchColumn();

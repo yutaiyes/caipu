@@ -61,11 +61,10 @@ echo '<div class="alert alert-danger"><i class="fas fa-times"></i> '.$e->getMess
 <div class="card-body">
 <?php
 try{
-$test_db=new PDO('sqlite:../data/data.db');
 echo '<div class="alert alert-success mb-2"><i class="fas fa-check"></i> 数据库连接成功</div>';
-$admin_count=$test_db->query("SELECT COUNT(*) FROM admin")->fetchColumn();
-$recipe_count=$test_db->query("SELECT COUNT(*) FROM recipes")->fetchColumn();
-$category_count=$test_db->query("SELECT COUNT(*) FROM categories")->fetchColumn();
+$admin_count=$db->query("SELECT COUNT(*) FROM admin")->fetchColumn();
+$recipe_count=$db->query("SELECT COUNT(*) FROM recipes")->fetchColumn();
+$category_count=$db->query("SELECT COUNT(*) FROM categories")->fetchColumn();
 echo '<table class="table table-sm mb-0">';
 echo '<tr><td>管理员数量</td><td><span class="badge bg-primary">'.$admin_count.'</span></td></tr>';
 echo '<tr><td>菜谱数量</td><td><span class="badge bg-info">'.$recipe_count.'</span></td></tr>';
@@ -88,15 +87,36 @@ echo '<div class="alert alert-danger"><i class="fas fa-times"></i> '.$e->getMess
 <table class="table table-sm mb-0">
 <?php
 $files=[
+'../config.php'=>'配置文件',
 'security.php'=>'安全配置',
 'layout_header.php'=>'头部布局',
 'layout_footer.php'=>'底部布局',
-'../data/data.db'=>'数据库文件'
 ];
 foreach($files as $file=>$desc){
 $exists=file_exists($file);
 $icon=$exists?'<i class="fas fa-check text-success"></i>':'<i class="fas fa-times text-danger"></i>';
 echo"<tr><td>{$icon} {$desc}</td><td><code>{$file}</code></td></tr>";
+}
+// 检查数据库文件
+require_once '../config.php';
+$db_path = defined('DB_PATH') ? DB_PATH : '../data/data.db';
+$exists = file_exists($db_path);
+$icon = $exists ? '<i class="fas fa-check text-success"></i>' : '<i class="fas fa-times text-danger"></i>';
+$db_name = basename($db_path);
+echo"<tr><td>{$icon} 数据库文件</td><td><code>{$db_name}</code> <small class='text-muted'>({$db_path})</small></td></tr>";
+
+// 显示所有数据库文件
+$data_dir = dirname($db_path);
+$db_files = glob($data_dir . '/*.db');
+if (count($db_files) > 1) {
+    echo"<tr><td><i class='fas fa-info-circle text-info'></i> 所有数据库</td><td>";
+    foreach ($db_files as $file) {
+        $name = basename($file);
+        $is_current = ($file === $db_path);
+        $badge = $is_current ? '<span class="badge bg-success">当前</span>' : '';
+        echo "<code>{$name}</code> {$badge} ";
+    }
+    echo"</td></tr>";
 }
 ?>
 </table>
@@ -114,7 +134,7 @@ echo"<tr><td>{$icon} {$desc}</td><td><code>{$file}</code></td></tr>";
 <div class="col-md-6">
 <h6>数据库文件</h6>
 <?php
-$db_file='../data/data.db';
+$db_file=defined('DB_PATH')?DB_PATH:'../data/data.db';
 if(file_exists($db_file)){
 $readable=is_readable($db_file);
 $writable=is_writable($db_file);
@@ -128,7 +148,7 @@ echo '<div class="text-danger"><i class="fas fa-times"></i> 文件不存在</div
 <div class="col-md-6">
 <h6>上传目录</h6>
 <?php
-$upload_dir='../uploads/images';
+$upload_dir=defined('UPLOAD_DIR')?UPLOAD_DIR.'/images':'../uploads/images';
 if(is_dir($upload_dir)){
 $writable=is_writable($upload_dir);
 echo $writable?'<div class="text-success"><i class="fas fa-check"></i> 可写</div>':'<div class="text-danger"><i class="fas fa-times"></i> 不可写</div>';
@@ -164,4 +184,3 @@ echo '<div class="text-danger"><i class="fas fa-times"></i> 目录不存在</div
 </div>
 </div>
 <?php require'layout_footer.php';?>
-

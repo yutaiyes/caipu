@@ -100,6 +100,17 @@ require_once 'includes/header.php';
     <div class="row">
         <!-- 主内容区 -->
         <div class="col-lg-9">
+            <!-- 菜谱封面 -->
+            <?php if ($data['cover']): ?>
+            <div class="recipe-cover-container">
+                <div class="recipe-cover" style="background-image: url('image.php?file=<?= htmlspecialchars($data['cover']) ?>');"></div>
+            </div>
+            <?php else: ?>
+            <!-- 无封面时显示默认图片 -->
+            <div class="recipe-cover-container">
+                <div class="recipe-cover" style="background-image: url('assets/images/placeholder.jpg');"></div>
+            </div>
+            <?php endif; ?>
             <!-- 菜谱头部 -->
             <div class="recipe-header">
                 <h1 class="recipe-title">

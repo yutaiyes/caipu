@@ -15,21 +15,18 @@ Thumbs.db
 *.min.js
 
 # Runtime Data
-/data/*.db
-/data/*.log
+/data/
+/uploads/
 /backups/
+/readme/
+/test/
+/tests/
+/test*
+/admin_test.html
 
 # Build Scripts
 build.php
 build_demo.php
-
-# Allow empty template database if you want to distribute it (optional)
-!/data/empty.db
-
-# User Uploads (Ignore all content but keep directory structure)
-/uploads/*
-!/uploads/.gitkeep
-!/uploads/recipes/.gitkeep
 
 # Logs
 *.log

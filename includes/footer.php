@@ -42,10 +42,9 @@
                 <h6><i class="fas fa-chart-bar"></i> 网站统计</h6>
                 <ul class="list-unstyled text-muted">
                     <?php
-                    // 获取统计数据
-                    $total_recipes = $db->query("SELECT COUNT(*) FROM recipes WHERE is_public=1")->fetchColumn();
-                    $total_categories = count($categories);
-                    $avg_price = $db->query("SELECT AVG(sell_price) FROM recipes WHERE is_public=1 AND sell_price>0")->fetchColumn();
+                    $total_recipes = isset($footer_total_recipes) ? $footer_total_recipes : $db->query("SELECT COUNT(*) FROM recipes WHERE is_public=1")->fetchColumn();
+                    $total_categories = isset($footer_total_categories) ? $footer_total_categories : count($categories);
+                    $avg_price = isset($footer_avg_price) ? $footer_avg_price : $db->query("SELECT AVG(sell_price) FROM recipes WHERE is_public=1 AND sell_price>0")->fetchColumn();
                     ?>
                     <li><i class="fas fa-book"></i> 菜谱总数：<?= $total_recipes ?> 道</li>
                     <li><i class="fas fa-tags"></i> 分类总数：<?= $total_categories ?> 个</li>
@@ -78,7 +77,7 @@
     <i class="fas fa-arrow-up"></i>
 </button>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.staticfile.org/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
 <script src="<?= isset($base_path) ? $base_path : '' ?>assets/js/main.js"></script>
 <?php if (isset($extra_js)): ?>
 <script src="<?= isset($base_path) ? $base_path : '' ?>assets/js/<?= $extra_js ?>"></script>

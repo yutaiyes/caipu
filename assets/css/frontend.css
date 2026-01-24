@@ -193,9 +193,13 @@ body {
 }
 .recipe-image {
     position:relative;
+    width:100%;
+    height:200px;
     overflow:hidden;
-    min-height:200px;
-    background:linear-gradient(135deg,#f8f9fa 0%,#e9ecef 100%)
+    background:linear-gradient(135deg,#f8f9fa 0%,#e9ecef 100%);
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat
 }
 .recipe-image img {
     width:100%;
@@ -204,8 +208,8 @@ body {
     min-height:200px;
     transition:transform 0.3s
 }
-.recipe-card:hover .recipe-image img {
-    transform:scale(1.05)
+.recipe-card:hover .recipe-image {
+    background-size:110%
 }
 .recipe-overlay {
     position:absolute;
@@ -251,8 +255,12 @@ body {
     font-size:0.9rem;
     line-height:1.6;
     margin-bottom:15px;
-    min-height:40px;
-    flex:1
+    height: 40px;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    text-overflow: ellipsis;
 }
 .recipe-meta {
     display:flex;
@@ -297,6 +305,51 @@ body {
     color:white;
     transform:scale(1.05);
     box-shadow:0 4px 12px rgba(102,126,234,0.4)
+}
+.recipe-cover-container {
+    margin-bottom:30px;
+    border-radius:15px;
+    overflow:hidden;
+    box-shadow:0 4px 20px rgba(0,0,0,0.1);
+    max-width:100%;
+    background:linear-gradient(135deg,#f8f9fa 0%,#e9ecef 100%)
+}
+.recipe-cover {
+    width:100%;
+    height:0;
+    padding-bottom:56.25%; /* 16:9 宽高比 */
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
+    border-radius:15px;
+    transition:transform 0.3s;
+    position:relative
+}
+.recipe-cover:hover {
+    transform:scale(1.02)
+}
+@media (max-width:992px) {
+    .recipe-cover {
+        padding-bottom:60%; /* 稍微调整比例 */
+    }
+}
+@media (max-width:768px) {
+    .recipe-cover {
+        padding-bottom:66.67%; /* 3:2 比例，更适合移动端 */
+    }
+    .recipe-cover-container {
+        margin:20px -15px 30px;
+        border-radius:0;
+        box-shadow:none
+    }
+    .recipe-cover {
+        border-radius:0
+    }
+}
+@media (max-width:576px) {
+    .recipe-cover {
+        padding-bottom:75%; /* 4:3 比例，小屏幕更合适 */
+    }
 }
 .empty-state {
     text-align:center;

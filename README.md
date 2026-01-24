@@ -12,6 +12,7 @@
 - **单页管理**：支持关于我们、联系方式等自定义单页内容管理。
 - **响应式设计**：适配移动端和桌面端，提供流畅的浏览体验。
 - **安全机制**：内置 CSRF 保护、输入过滤、数据库备份功能。
+- **图片防盗链**：支持图片防盗链保护，防止外部网站盗用图片资源，支持 Apache 和 Nginx。
 
 ## 🚀 快速开始
 
@@ -116,3 +117,58 @@ MIT 许可协议
 对适销性、特定用途适用性和非侵权性的保证。在任何情况下，作者或版权
 持有人均不对因软件或软件的使用或其他交易而产生的任何索赔、损害或
 其他责任承担责任，无论这些责任是因合同、侵权还是其他原因引起的。
+
+## 🖼️ 图片防盗链
+
+系统内置了图片防盗链功能，有效防止外部网站盗用您的图片资源。
+
+### 实现方式
+
+#### Apache (.htaccess)
+当在后台启用伪静态时，系统会自动在 `.htaccess` 文件中添加防盗链规则：
+```apache
+# 图片防盗链：将uploads目录的请求重定向到image.php控制器
+RewriteRule ^uploads/(.*)$ image.php?file=$1 [L,QSA]
+```
+
+#### Nginx
+提供两种防盗链方案：
+
+**方案一：使用image.php控制器（推荐）**
+```nginx
+location ~* ^/uploads/.*\.(jpg|jpeg|png|gif|webp)$ {
+    rewrite ^/uploads/(.*)$ /image.php?file=$1 last;
+}
+```
+
+**方案二：使用Nginx内置防盗链**
+```nginx
+location ~* ^/uploads/.*\.(jpg|jpeg|png|gif|webp)$ {
+    valid_referers none blocked server_names;
+    if ($invalid_referer) {
+        return 403;
+    }
+    expires 1y;
+    add_header Cache-Control "public, immutable";
+}
+```
+
+### 工作原理
+
+1. **请求拦截**：通过服务器配置拦截对 `uploads/` 目录的图片请求
+2. **来源验证**：检查 HTTP Referer 头，验证请求来源
+3. **防盗链响应**：对非法请求返回 SVG 格式的防盗链提示图片
+4. **灵活配置**：支持配置允许的域名列表
+
+### 优势
+
+- **零配置**：Apache 环境下启用伪静态即可自动生效
+- **高性能**：支持浏览器缓存，减少服务器负载
+- **自定义响应**：返回美观的防盗链提示图片
+- **兼容性强**：同时支持 Apache 和 Nginx 服务器
+
+### 注意事项
+
+- 宝塔面板等管理工具会自动处理 Nginx 配置
+- 直接访问图片（空 Referer）默认允许
+- 可通过修改 `image.php` 中的 `$allowed_hosts` 数组添加允许的域名

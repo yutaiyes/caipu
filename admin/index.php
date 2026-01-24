@@ -1,10 +1,22 @@
 <?php
 require 'layout_header.php';
 
-// 统计数据
-$total_recipes = $db->query("SELECT COUNT(*) FROM recipes")->fetchColumn();
-$public_recipes = $db->query("SELECT COUNT(*) FROM recipes WHERE is_public=1")->fetchColumn();
-$total_categories = $db->query("SELECT COUNT(*) FROM categories")->fetchColumn();
+// 使用单个查询获取所有统计数据
+try {
+    $stats = $db->query("
+        SELECT 
+            COUNT(*) as total_recipes,
+            COUNT(CASE WHEN is_public=1 THEN 1 END) as public_recipes,
+            COUNT(CASE WHEN is_public=0 THEN 1 END) as private_recipes
+        FROM recipes
+    ")->fetch();
+    
+    $total_recipes = $stats['total_recipes'];
+    $public_recipes = $stats['public_recipes'];
+    $private_recipes = $stats['private_recipes'];
+} catch (Exception $e) {
+    $total_recipes = $public_recipes = $private_recipes = 0;
+}
 
 // 检查pages表是否存在
 $pages_count = 0;
@@ -14,13 +26,26 @@ try {
     $pages_count = 0;
 }
 
-// 最近菜谱
-$recent_recipes = $db->query("SELECT * FROM recipes ORDER BY id DESC LIMIT 5")->fetchAll();
+// 获取分类数量
+$total_categories = 0;
+try {
+    $total_categories = $db->query("SELECT COUNT(*) FROM categories")->fetchColumn();
+} catch (Exception $e) {
+    $total_categories = 0;
+}
+
+// 最近菜谱（限制查询字段）
+$recent_recipes = [];
+try {
+    $recent_recipes = $db->query("SELECT id, title, created_at FROM recipes ORDER BY id DESC LIMIT 5")->fetchAll();
+} catch (Exception $e) {
+    $recent_recipes = [];
+}
 
 // 数据库大小
 $db_size = 0;
-if (file_exists('../data/data.db')) {
-    $db_size = filesize('../data/data.db');
+if (defined('DB_PATH') && file_exists(DB_PATH)) {
+    $db_size = filesize(DB_PATH);
 }
 
 // 备份数量
@@ -210,7 +235,7 @@ if (is_dir('../backups')) {
                     </div>
                     
                     <div class="col-md-3 col-sm-6">
-                        <a href="security.php" class="text-decoration-none">
+                        <a href="settings.php" class="text-decoration-none">
                             <div class="quick-link-card">
                                 <div class="quick-link-icon bg-danger">
                                     <i class="fas fa-shield-alt"></i>
@@ -437,5 +462,4 @@ if (is_dir('../backups')) {
 </div>
 
 <?php require 'layout_footer.php'; ?>
-
 

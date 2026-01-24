@@ -8,12 +8,15 @@ if (!file_exists(DB_PATH)) {
     exit;
 }
 
-// 创建数据库连接
-try {
-    $db = new PDO('sqlite:' . DB_PATH);
+if (!isset($db)) {
+    try {
+        $db = new PDO('sqlite:' . DB_PATH);
+        $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    } catch (Exception $e) {
+        die('数据库连接失败');
+    }
+} else {
     $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (Exception $e) {
-    die('数据库连接失败');
 }
 
 // 记录访问统计 (已禁用以提升性能)
@@ -35,12 +38,23 @@ $geo_region = getSiteSetting('geo_region', 'CN');
 $geo_placename = getSiteSetting('geo_placename', '中国');
 $geo_position = getSiteSetting('geo_position', '');
 
-// 获取页面列表
+// 获取页面列表（导航需要）
 $pages = [];
 try {
-    $pages = $db->query("SELECT * FROM pages WHERE is_public = 1 ORDER BY id ASC")->fetchAll();
+    $pages = $db->query("SELECT id, title, slug FROM pages WHERE is_public = 1 ORDER BY id ASC")->fetchAll();
 } catch (Exception $e) {
-    // 如果pages表不存在，忽略错误
+}
+
+// 12位解码函数
+if (!function_exists('decode_id')) {
+    function decode_id($encoded) {
+        $base36 = substr(strtolower($encoded), 2);
+        $base36 = ltrim($base36, '0');
+        if (empty($base36)) {
+            return 0;
+        }
+        return base_convert($base36, 36, 10);
+    }
 }
 
 // 获取当前页面信息
@@ -62,12 +76,15 @@ if (isset($_GET['slug'])) {
     }
 }
 
-// 获取分类列表
-$categories = $db->query("SELECT c.*, COUNT(r.id) as recipe_count
-    FROM categories c
-    LEFT JOIN recipes r ON c.id = r.category_id AND r.is_public=1
-    GROUP BY c.id
-    ORDER BY c.name")->fetchAll();
+$categories = [];
+try {
+    $categories = $db->query("SELECT c.*, COUNT(r.id) as recipe_count
+        FROM categories c
+        LEFT JOIN recipes r ON c.id = r.category_id AND r.is_public=1
+        GROUP BY c.id
+        ORDER BY c.name")->fetchAll();
+} catch (Exception $e) {
+}
 ?>
 <!doctype html>
 <html lang="zh-CN">
@@ -89,9 +106,9 @@ $categories = $db->query("SELECT c.*, COUNT(r.id) as recipe_count
     <meta name="geo.position" content="<?= htmlspecialchars($geo_position) ?>">
     <?php endif; ?>
     <?php
-    // CSS版本号：生产环境使用文件修改时间，开发环境使用时间戳
-    $use_min = (getSiteSetting('compress_css') === '1');
     $env_mode = getSiteSetting('environment_mode', 'production');
+    $frontend_min_path = __DIR__ . '/../assets/css/frontend.min.css';
+    $use_min = (file_exists($frontend_min_path) || getSiteSetting('compress_css') === '1');
     $frontend_css_path = __DIR__ . '/../assets/css/frontend' . ($use_min ? '.min' : '') . '.css';
     if ($env_mode === 'development') {
         $css_version = '?v=' . time();
@@ -99,8 +116,10 @@ $categories = $db->query("SELECT c.*, COUNT(r.id) as recipe_count
         $css_version = '?v=' . (file_exists($frontend_css_path) ? filemtime($frontend_css_path) : time());
     }
     ?>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://cdn.staticfile.org" crossorigin>
+    <link rel="stylesheet" href="https://cdn.staticfile.org/bootstrap/5.3.3/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.staticfile.org/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="<?= isset($base_path) ? $base_path : '' ?>assets/css/fa-fallback.css">
     <link rel="stylesheet" href="<?= isset($base_path) ? $base_path : '' ?>assets/css/frontend<?= $use_min ? '.min' : '' ?>.css<?= $css_version ?>">
     <?php if (isset($extra_css)):
         $css_name = str_replace('.css', '', $extra_css);

@@ -1,0 +1,145 @@
+/* 本地图标字体 - 替代Font Awesome CDN */
+@font-face {
+    font-family: 'Local Icons';
+    src: url('data:font/woff2;base64,') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* 基本图标映射 */
+.icon-home::before { content: "🏠"; }
+.icon-utensils::before { content: "🍽️"; }
+.icon-file-alt::before { content: "📄"; }
+.icon-search::before { content: "🔍"; }
+.icon-eye::before { content: "👁️"; }
+.icon-edit::before { content: "✏️"; }
+.icon-trash::before { content: "🗑️"; }
+.icon-plus::before { content: "➕"; }
+.icon-arrow-left::before { content: "⬅️"; }
+.icon-arrow-right::before { content: "➡️"; }
+.icon-print::before { content: "🖨️"; }
+.icon-tag::before { content: "🏷️"; }
+.icon-list::before { content: "📋"; }
+.icon-cog::before { content: "⚙️"; }
+.icon-chart-line::before { content: "📈"; }
+.icon-chart-bar::before { content: "📊"; }
+.icon-sync::before { content: "🔄"; }
+.icon-broom::before { content: "🧹"; }
+.icon-globe::before { content: "🌐"; }
+.icon-user::before { content: "👤"; }
+.icon-clock::before { content: "🕐"; }
+.icon-calendar::before { content: "📅"; }
+.icon-dollar-sign::before { content: "💵"; }
+.icon-yen-sign::before { content: "💴"; }
+.icon-lightbulb::before { content: "💡"; }
+.icon-exclamation-triangle::before { content: "⚠️"; }
+.icon-check::before { content: "✅"; }
+.icon-times::before { content: "❌"; }
+.icon-save::before { content: "💾"; }
+.icon-download::before { content: "⬇️"; }
+.icon-upload::before { content: "⬆️"; }
+.icon-filter::before { content: "🔽"; }
+.icon-sort::before { content: "🔀"; }
+.icon-link::before { content: "🔗"; }
+.icon-external-link::before { content: "🔗"; }
+.icon-copy::before { content: "📋"; }
+.icon-paste::before { content: "📋"; }
+.icon-cut::before { content: "✂️"; }
+.icon-backward::before { content: "⏮️"; }
+.icon-forward::before { content: "⏭️"; }
+.icon-play::before { content: "▶️"; }
+.icon-pause::before { content: "⏸️"; }
+.icon-stop::before { content: "⏹️"; }
+.icon-eject::before { content: "⏏️"; }
+.icon-volume-up::before { content: "🔊"; }
+.icon-volume-down::before { content: "🔉"; }
+.icon-volume-off::before { content: "🔇"; }
+.icon-expand::before { content: "⤢"; }
+.icon-compress::before { content: "⤡"; }
+.icon-fullscreen::before { content: "⛶"; }
+.icon-resize-full::before { content: "⤢"; }
+.icon-resize-small::before { content: "⤡"; }
+
+/* 通用图标类 */
+[class^="icon-"], [class*=" icon-"] {
+    font-family: 'Local Icons', sans-serif;
+    speak: none;
+    font-style: normal;
+    font-weight: normal;
+    font-variant: normal;
+    text-transform: none;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    display: inline-block;
+    margin-right: 0.5em;
+}
+
+/* 兼容Font Awesome类名 */
+.fa-home { font-family: 'Local Icons', sans-serif; }
+.fa-home::before { content: "🏠"; }
+.fa-utensils { font-family: 'Local Icons', sans-serif; }
+.fa-utensils::before { content: "🍽️"; }
+.fa-file-alt { font-family: 'Local Icons', sans-serif; }
+.fa-file-alt::before { content: "📄"; }
+.fa-search { font-family: 'Local Icons', sans-serif; }
+.fa-search::before { content: "🔍"; }
+.fa-eye { font-family: 'Local Icons', sans-serif; }
+.fa-eye::before { content: "👁️"; }
+.fa-edit { font-family: 'Local Icons', sans-serif; }
+.fa-edit::before { content: "✏️"; }
+.fa-trash { font-family: 'Local Icons', sans-serif; }
+.fa-trash::before { content: "🗑️"; }
+.fa-plus { font-family: 'Local Icons', sans-serif; }
+.fa-plus::before { content: "➕"; }
+.fa-plus-circle { font-family: 'Local Icons', sans-serif; }
+.fa-plus-circle::before { content: "➕"; }
+.fa-arrow-left { font-family: 'Local Icons', sans-serif; }
+.fa-arrow-left::before { content: "⬅️"; }
+.fa-arrow-right { font-family: 'Local Icons', sans-serif; }
+.fa-arrow-right::before { content: "➡️"; }
+.fa-print { font-family: 'Local Icons', sans-serif; }
+.fa-print::before { content: "🖨️"; }
+.fa-tag { font-family: 'Local Icons', sans-serif; }
+.fa-tag::before { content: "🏷️"; }
+.fa-tags { font-family: 'Local Icons', sans-serif; }
+.fa-tags::before { content: "🏷️"; }
+.fa-list { font-family: 'Local Icons', sans-serif; }
+.fa-list::before { content: "📋"; }
+.fa-cog { font-family: 'Local Icons', sans-serif; }
+.fa-cog::before { content: "⚙️"; }
+.fa-chart-line { font-family: 'Local Icons', sans-serif; }
+.fa-chart-line::before { content: "📈"; }
+.fa-chart-bar { font-family: 'Local Icons', sans-serif; }
+.fa-chart-bar::before { content: "📊"; }
+.fa-sync { font-family: 'Local Icons', sans-serif; }
+.fa-sync::before { content: "🔄"; }
+.fa-broom { font-family: 'Local Icons', sans-serif; }
+.fa-broom::before { content: "🧹"; }
+.fa-globe { font-family: 'Local Icons', sans-serif; }
+.fa-globe::before { content: "🌐"; }
+.fa-user { font-family: 'Local Icons', sans-serif; }
+.fa-user::before { content: "👤"; }
+.fa-clock { font-family: 'Local Icons', sans-serif; }
+.fa-clock::before { content: "🕐"; }
+.fa-calendar { font-family: 'Local Icons', sans-serif; }
+.fa-calendar::before { content: "📅"; }
+.fa-dollar-sign { font-family: 'Local Icons', sans-serif; }
+.fa-dollar-sign::before { content: "💵"; }
+.fa-yen-sign { font-family: 'Local Icons', sans-serif; }
+.fa-yen-sign::before { content: "💴"; }
+.fa-lightbulb { font-family: 'Local Icons', sans-serif; }
+.fa-lightbulb::before { content: "💡"; }
+.fa-exclamation-triangle { font-family: 'Local Icons', sans-serif; }
+.fa-exclamation-triangle::before { content: "⚠️"; }
+.fa-check { font-family: 'Local Icons', sans-serif; }
+.fa-check::before { content: "✅"; }
+.fa-times { font-family: 'Local Icons', sans-serif; }
+.fa-times::before { content: "❌"; }
+.fa-save { font-family: 'Local Icons', sans-serif; }
+.fa-save::before { content: "💾"; }
+.fa-download { font-family: 'Local Icons', sans-serif; }
+.fa-download::before { content: "⬇️"; }
+.fa-upload { font-family: 'Local Icons', sans-serif; }
+.fa-upload::before { content: "⬆️"; }

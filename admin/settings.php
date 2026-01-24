@@ -1,4 +1,5 @@
 <?php
+require_once '../config.php';
 require'layout_header.php';
 $config_file='../config.php';
 $htaccess_file='../.htaccess';
@@ -39,7 +40,7 @@ $enable=$_POST['enable_rewrite']=='1';
 
 // 更新数据库中的 rewrite_enabled 设置
 try {
-    $db_settings = new PDO('sqlite:../data/data.db');
+    $db_settings = new PDO('sqlite:' . DB_PATH);
     // 检查表是否存在
     $check = $db_settings->query("SELECT name FROM sqlite_master WHERE type='table' AND name='settings'")->fetch();
     if ($check) {
@@ -60,12 +61,14 @@ try {
 
 if($enable){
 $htaccess_content=<<<EOT
-# 商用菜谱库伪静态规则 v2.0
+# 商用菜谱库伪静态规则 v2.1
 # Recipe System URL Rewrite Rules
-# 支持12位固定长度编码
+# 支持12位固定长度编码 + 图片防盗链
 <IfModule mod_rewrite.c>
 RewriteEngine On
 RewriteBase /
+# 图片防盗链：将uploads目录的请求重定向到image.php控制器
+RewriteRule ^uploads/(.*)$ image.php?file=$1 [L,QSA]
 # 如果请求的是真实存在的文件或目录，直接访问
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
@@ -383,15 +386,35 @@ RewriteRule ^index\.html$ index.php [L,QSA]</code></pre>
         <i class="fas fa-copy"></i> 一键复制规则
     </button>
 </div>
-<pre class="bg-dark text-white p-3 rounded" id="nginx-rules-code">location / {
-    if (!-e $request_filename){
-        rewrite "^/([0-9B-Zb-z][a-zA-Z0-9]{11})\.html$" /recipe.php?base=$1 last;
-        rewrite ^/recipe/([0-9]+)\.html$ /recipe.php?id=$1 last;
-        rewrite ^/category/([0-9]+)\.html$ /index.php?cat=$1 last;
-        rewrite "^/([Aa][a-zA-Z0-9]{11})\.html$" /page.php?base=$1 last;
-        rewrite ^/page/([a-zA-Z0-9_-]+)\.html$ /page.php?slug=$1 last;
-        rewrite ^/index\.html$ /index.php last;
+<pre class="bg-dark text-white p-3 rounded" id="nginx-rules-code"># 商用菜谱库 Nginx伪静态规则 v2.1
+# 支持12位固定长度编码 + 图片防盗链
+
+# 图片防盗链规则（可选）
+location ~* ^/uploads/.*\.(jpg|jpeg|png|gif|webp)$ {
+    valid_referers none blocked server_names;
+    if ($invalid_referer) {
+        return 403;
     }
+    expires 1y;
+    add_header Cache-Control "public, immutable";
+}
+
+# 主伪静态规则
+location / {
+    try_files $uri $uri/ @rewrite;
+}
+
+location @rewrite {
+    # 菜谱详情页: 12位编码（不以A开头）
+    rewrite "^/([0-9B-Zb-z][a-zA-Z0-9]{11})\.html$" /recipe.php?base=$1 last;
+    # 兼容旧格式
+    rewrite ^/recipe/([0-9]+)\.html$ /recipe.php?id=$1 last;
+    rewrite ^/category/([0-9]+)\.html$ /index.php?cat=$1 last;
+    # 自定义页面: 12位编码（以A开头）
+    rewrite "^/([Aa][a-zA-Z0-9]{11})\.html$" /page.php?base=$1 last;
+    # 兼容旧格式
+    rewrite ^/page/([a-zA-Z0-9_-]+)\.html$ /page.php?slug=$1 last;
+    rewrite ^/index\.html$ /index.php last;
 }</pre>
 <script>
 function copyNginxRules() {

@@ -15,24 +15,52 @@ $page_title = '首页';
 // 搜索和筛选
 $category_filter = isset($_GET['cat']) ? (int)$_GET['cat'] : 0;
 $search_keyword = isset($_GET['search']) ? trim($_GET['search']) : '';
+$current_page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
 
 // 构建查询条件
 $where_conditions = ["is_public=1"];
+$params = [];
 if ($category_filter) {
-    $where_conditions[] = "category_id=$category_filter";
+    $where_conditions[] = "category_id = ?";
+    $params[] = $category_filter;
 }
 if ($search_keyword) {
-    $search_safe = $db->quote('%' . $search_keyword . '%');
-    $where_conditions[] = "(title LIKE $search_safe OR description LIKE $search_safe OR content LIKE $search_safe)";
+    $where_conditions[] = "(title LIKE ? OR description LIKE ? OR content LIKE ?)";
+    $search_like = '%' . $search_keyword . '%';
+    $params[] = $search_like;
+    $params[] = $search_like;
+    $params[] = $search_like;
 }
 $where = implode(' AND ', $where_conditions);
 
-// 获取菜谱列表
-$list = $db->query("SELECT r.*, c.name as category_name, strftime('%s', r.created_at) as timestamp
+$count_stmt = $db->prepare("SELECT COUNT(*) FROM recipes WHERE $where");
+$count_stmt->execute($params);
+$total_results = (int)$count_stmt->fetchColumn();
+$total_pages = $total_results > 0 ? (int)ceil($total_results / PER_PAGE) : 1;
+if ($current_page > $total_pages && $total_results > 0) {
+    $current_page = $total_pages;
+}
+$offset = ($current_page - 1) * PER_PAGE;
+
+$list_stmt = $db->prepare("SELECT r.id, r.title, r.description, r.cost_price, r.sell_price, r.is_public, r.cover, r.category_id, c.name as category_name
     FROM recipes r
     LEFT JOIN categories c ON r.category_id = c.id
     WHERE $where
-    ORDER BY r.id DESC")->fetchAll();
+    ORDER BY r.id DESC
+    LIMIT :limit OFFSET :offset");
+foreach ($params as $index => $value) {
+    $list_stmt->bindValue($index + 1, $value);
+}
+$list_stmt->bindValue(':limit', PER_PAGE, PDO::PARAM_INT);
+$list_stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+$list_stmt->execute();
+$list = $list_stmt->fetchAll();
+
+$categories = $db->query("SELECT c.*, COUNT(r.id) as recipe_count
+    FROM categories c
+    LEFT JOIN recipes r ON c.id = r.category_id AND r.is_public=1
+    GROUP BY c.id
+    ORDER BY c.name")->fetchAll();
 
 // 引入公共头部
 require_once 'includes/header.php';
@@ -41,6 +69,9 @@ require_once 'includes/header.php';
 $total_recipes = $db->query("SELECT COUNT(*) FROM recipes WHERE is_public=1")->fetchColumn();
 $total_categories = count($categories);
 $avg_price = $db->query("SELECT AVG(sell_price) FROM recipes WHERE is_public=1 AND sell_price>0")->fetchColumn();
+$footer_total_recipes = $total_recipes;
+$footer_total_categories = $total_categories;
+$footer_avg_price = $avg_price;
 ?>
 
 <!-- Hero 区域 -->
@@ -95,7 +126,7 @@ $avg_price = $db->query("SELECT AVG(sell_price) FROM recipes WHERE is_public=1 A
             <?php if ($search_keyword): ?>
             <div class="search-result-info">
                 <i class="fas fa-info-circle"></i> 
-                搜索 "<?= htmlspecialchars($search_keyword) ?>" 找到 <?= count($list) ?> 个结果
+                搜索 "<?= htmlspecialchars($search_keyword) ?>" 找到 <?= $total_results ?> 个结果
                 <a href="index.php<?= $category_filter ? '?cat=' . $category_filter : '' ?>" class="ms-2">
                     <i class="fas fa-times"></i> 清除搜索
                 </a>
@@ -144,17 +175,15 @@ $avg_price = $db->query("SELECT AVG(sell_price) FROM recipes WHERE is_public=1 A
             全部菜谱
             <?php endif; ?>
         </h4>
-        <span class="recipes-count">共 <?= count($list) ?> 道菜谱</span>
+        <span class="recipes-count">共 <?= $total_results ?> 道菜谱</span>
     </div>
     <div class="row" id="recipe-list">
         <?php foreach ($list as $r): ?>
         <div class="col-lg-4 col-md-6 mb-4">
             <div class="recipe-card" id="recipe-<?= $r['id'] ?>">
-                <div class="recipe-image">
-                    <?php if ($r['cover']): ?>
-                    <img src="uploads/<?= htmlspecialchars($r['cover']) ?>" alt="<?= htmlspecialchars($r['title']) ?>">
-                    <?php else: ?>
-                    <img src="assets/images/placeholder.jpg" alt="<?= htmlspecialchars($r['title']) ?>">
+                <div class="recipe-image" style="background-image: url('image.php?file=<?= htmlspecialchars($r['cover'] ?? '') ?>');">
+                    <?php if (!$r['cover']): ?>
+                    <img src="assets/images/placeholder.jpg" alt="<?= htmlspecialchars($r['title']) ?>" style="width:100%;height:100%;object-fit:cover;">
                     <?php endif; ?>
                     <div class="recipe-overlay">
                         <div class="recipe-category"><?= htmlspecialchars($r['category_name'] ?: '未分类') ?></div>
@@ -221,5 +250,32 @@ $avg_price = $db->query("SELECT AVG(sell_price) FROM recipes WHERE is_public=1 A
     <?php endif; ?>
 </div>
 
-<?php require_once 'includes/footer.php'; ?>
+<?php if ($total_pages > 1): ?>
+<div class="container pb-5">
+    <nav aria-label="分页">
+        <ul class="pagination justify-content-center">
+            <?php
+            $query_params = [];
+            if ($category_filter) $query_params['cat'] = $category_filter;
+            if ($search_keyword) $query_params['search'] = $search_keyword;
+            ?>
+            <li class="page-item <?= $current_page <= 1 ? 'disabled' : '' ?>">
+                <?php $query_params['page'] = max(1, $current_page - 1); ?>
+                <a class="page-link" href="index.php?<?= http_build_query($query_params) ?>">&laquo;</a>
+            </li>
+            <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+            <li class="page-item <?= $i === $current_page ? 'active' : '' ?>">
+                <?php $query_params['page'] = $i; ?>
+                <a class="page-link" href="index.php?<?= http_build_query($query_params) ?>"><?= $i ?></a>
+            </li>
+            <?php endfor; ?>
+            <li class="page-item <?= $current_page >= $total_pages ? 'disabled' : '' ?>">
+                <?php $query_params['page'] = min($total_pages, $current_page + 1); ?>
+                <a class="page-link" href="index.php?<?= http_build_query($query_params) ?>">&raquo;</a>
+            </li>
+        </ul>
+    </nav>
+</div>
+<?php endif; ?>
 
+<?php require_once 'includes/footer.php'; ?>

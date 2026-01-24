@@ -2,7 +2,37 @@
 // 设置时区
 date_default_timezone_set('Asia/Shanghai');
 
-$dbFile = __DIR__ . '/data/data.db';
+// 自动查找数据库路径
+function get_install_db_path() {
+    $data_dir = __DIR__ . '/data';
+    if (!is_dir($data_dir)) {
+        mkdir($data_dir, 0777, true);
+    }
+    
+    // 查找data目录下所有.db文件
+    $db_files = glob($data_dir . '/*.db');
+    
+    if (empty($db_files)) {
+        // 如果没有数据库，使用默认名称
+        return $data_dir . '/caipudata.db';
+    }
+    
+    // 如果只有一个数据库，直接使用
+    if (count($db_files) === 1) {
+        return $db_files[0];
+    }
+    
+    // 如果有多个数据库，优先使用名为caipudata.db的
+    $default_db = $data_dir . '/caipudata.db';
+    if (in_array($default_db, $db_files)) {
+        return $default_db;
+    }
+    
+    // 否则使用第一个找到的数据库
+    return $db_files[0];
+}
+
+$dbFile = get_install_db_path();
 
 // 检查是否已安装
 if (file_exists($dbFile)) {
